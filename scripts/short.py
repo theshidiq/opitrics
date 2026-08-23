@@ -21,11 +21,17 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from opitrics.analyze.llm import LLMClient  # noqa: E402
 from opitrics.config import settings  # noqa: E402
 from opitrics.ingest.db import Database  # noqa: E402
-from opitrics.render import vertical  # noqa: E402
+from opitrics.render import layers, vertical  # noqa: E402
 from opitrics.render.audio import AudioError, ElevenLabs  # noqa: E402
 from opitrics.render.short import write_short  # noqa: E402
 from opitrics.render.story import verify_quotes  # noqa: E402
-from opitrics.render.motion import MotionError, Shot, build_motion_short  # noqa: E402
+from opitrics.render.motion import (  # noqa: E402
+    LayeredShot,
+    MotionError,
+    Shot,
+    build_layered_short,
+    build_motion_short,
+)
 from opitrics.render.video import (  # noqa: E402
     VideoError,
     build_narrated_short,
@@ -46,7 +52,7 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--subject", required=True)
     ap.add_argument("--name", help="display name, e.g. 'BYD Racco'")
-    ap.add_argument("--beats", type=int, default=6)
+    ap.add_argument("--beats", type=int, default=10)
     ap.add_argument("--scope", default="car", choices=["car", "meta", "all"],
                     help="which side of the corpus the short draws on")
     ap.add_argument("--music", type=Path, help="background track to mix under")
@@ -56,7 +62,9 @@ def main() -> int:
     ap.add_argument("--no-sfx", action="store_true")
     ap.add_argument("--static", action="store_true",
                     help="hard cuts between still cards instead of animating")
-    ap.add_argument("--crossfade", type=float, default=0.28)
+    ap.add_argument("--crossfade", type=float, default=0.16)
+    ap.add_argument("--flat", action="store_true",
+                    help="animate whole cards instead of their parts")
     args = ap.parse_args()
 
     paths = settings.workspace.subject(args.subject).ensure()
@@ -111,27 +119,34 @@ def main() -> int:
     # ── cards ───────────────────────────────────────────────
     print(f"\n{BOLD}Rendering cards{RESET}")
     cards: list[Path] = []
+    layered: list = []
     for b in script.beats:
         path = out_dir / f"{b.index:02d}.png"
+        # Layer directory per beat, for the animated render. The flat
+        # PNG is still written — it is what an editor would import.
+        ldir = out_dir / "layers" / f"{b.index:02d}"
         if b.kind == "hook":
-            vertical.hook_card(
-                figure=b.figure or f"{meta['raw']:,}",
-                caption=b.caption or "comments read",
-                subject=args.subject, out=path,
-            )
+            figure = b.figure or f"{meta['raw']:,}"
+            caption = b.caption or "comments read"
+            vertical.hook_card(figure=figure, caption=caption,
+                               subject=args.subject, out=path)
+            layered.append(layers.hook_layers(figure, caption,
+                                              args.subject, ldir))
         elif b.kind == "quote" and b.quote_original:
             vertical.quote_card(
-                original=b.quote_original,
-                english=b.quote_english,
-                likes=b.quote_likes,
-                subject=args.subject, out=path,
+                original=b.quote_original, english=b.quote_english,
+                likes=b.quote_likes, subject=args.subject, out=path,
             )
+            layered.append(layers.quote_layers(
+                b.quote_original, b.quote_english, b.quote_likes,
+                args.subject, ldir,
+            ))
         else:
-            vertical.statement_card(
-                text=b.text or b.caption or b.narration,
-                subject=args.subject, out=path,
-                eyebrow=display,
-            )
+            body = b.text or b.caption or b.narration
+            vertical.statement_card(text=body, subject=args.subject,
+                                    out=path, eyebrow=display)
+            layered.append(layers.statement_layers(body, args.subject,
+                                                   ldir, eyebrow=display))
         cards.append(path)
         print(f"  {DIM}{path.name} · {b.kind}{RESET}")
 
@@ -195,22 +210,35 @@ def main() -> int:
         except VideoError as exc:
             print(f"  {YELLOW}{exc}{RESET}")
     else:
-        print(f"\n{BOLD}Rendering video{RESET} {DIM}animated{RESET}")
+        style = "whole cards" if args.flat else "layered"
+        print(f"\n{BOLD}Rendering video{RESET} {DIM}{style}{RESET}")
         from opitrics.render.audio import audio_duration
 
+        # Without narration a beat still needs long enough for its
+        # elements to arrive and be read.
         holds = [
-            max(audio_duration(vo) + 0.55, 2.4) if vo else 2.6
+            max(audio_duration(vo) + 0.6, 2.6) if vo else 3.4
             for vo in narration
         ]
-        shots = [
-            Shot(card=c, hold=h, kind=b.kind, audio=vo)
-            for c, h, b, vo in zip(cards, holds, script.beats, narration)
-        ]
         try:
-            _, total = build_motion_short(
-                shots, video, music=music,
-                music_gain_db=args.music_gain, crossfade=args.crossfade,
-            )
+            if args.flat:
+                shots = [
+                    Shot(card=c, hold=h, kind=b.kind, audio=vo)
+                    for c, h, b, vo in zip(cards, holds, script.beats, narration)
+                ]
+                _, total = build_motion_short(
+                    shots, video, music=music,
+                    music_gain_db=args.music_gain, crossfade=args.crossfade,
+                )
+            else:
+                shots = [
+                    LayeredShot(card=lc, hold=h, kind=b.kind, audio=vo)
+                    for lc, h, b, vo in zip(layered, holds, script.beats, narration)
+                ]
+                _, total = build_layered_short(
+                    shots, video, music=music,
+                    music_gain_db=args.music_gain, crossfade=args.crossfade,
+                )
             print(f"  {GREEN}{video.name}{RESET} {DIM}{total:.1f}s{RESET}")
         except MotionError as exc:
             print(f"  {YELLOW}{exc}{RESET}")

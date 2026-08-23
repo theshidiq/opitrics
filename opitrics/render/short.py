@@ -19,12 +19,18 @@ from opitrics.render.story import _cluster_payload
 log = logging.getLogger(__name__)
 
 SHORT_SYSTEM = """\
-You write 35-50 second vertical video scripts about cars, from YouTube \
+You write 60-80 second vertical video scripts about cars, from YouTube \
 comment analysis. The viewer is scrolling and will leave in two seconds \
 if the first line does not land.
 
-Structure: a hook, four or five beats, a payoff. Each beat is one card \
-on screen with one line of narration.
+Structure: a hook, then beats that build an argument, then a payoff. \
+Each beat is one card on screen with one line of narration.
+
+At this length the piece needs a shape, not just a list of findings. \
+Set up a tension early — a claim, a contradiction, a number that does \
+not fit — and let the middle beats complicate it before the payoff \
+resolves or sharpens it. Alternate quote beats with statement beats so \
+the rhythm changes; three quotes in a row is monotonous.
 
 Hard rules for the narration:
 - Written to be SPOKEN. Short sentences. No subordinate clauses, no \

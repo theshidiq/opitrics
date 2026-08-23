@@ -21,7 +21,7 @@ to say holds for four seconds.
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 log = logging.getLogger(__name__)
@@ -113,6 +113,143 @@ def _punch(item, hold: float) -> None:
         values=[[1.14, 1.14], [1.0, 1.0], [1.035, 1.035]],
         easings=[mv.Easing.EASE_OUT5, mv.Easing.LINEAR],
     )
+
+
+def _entrance(item, kind: str, start: float, hold: float) -> None:
+    """Animate one element onto the card.
+
+    Entrances are short — 0.3 to 0.45 seconds. Anything slower reads as
+    sluggish at this pace, and the element needs to be settled well
+    before the narration moves past it.
+    """
+    import movis as mv
+
+    dur = 0.36
+    end = min(start + dur, hold)
+    if end <= start:
+        start, end = 0.0, min(dur, hold)
+
+    if kind == "pop":
+        item.transform.scale.enable_motion().extend(
+            keyframes=[start, min(start + 0.22, hold), end],
+            values=[[0.72, 0.72], [1.05, 1.05], [1.0, 1.0]],
+            easings=[mv.Easing.EASE_OUT5, mv.Easing.EASE_IN_OUT],
+        )
+        item.transform.opacity.enable_motion().extend(
+            keyframes=[start, min(start + 0.14, hold)],
+            values=[0.0, 1.0],
+            easings=[mv.Easing.EASE_OUT],
+        )
+        return
+
+    if kind == "rise":
+        item.transform.position.enable_motion().extend(
+            keyframes=[start, end],
+            values=[[W / 2, H / 2 + 46], [W / 2, H / 2]],
+            easings=[mv.Easing.EASE_OUT5],
+        )
+        item.transform.opacity.enable_motion().extend(
+            keyframes=[start, min(start + 0.24, hold)],
+            values=[0.0, 1.0],
+            easings=[mv.Easing.EASE_OUT],
+        )
+        return
+
+    # "fade" and anything unrecognised.
+    item.transform.opacity.enable_motion().extend(
+        keyframes=[start, end],
+        values=[0.0, 1.0],
+        easings=[mv.Easing.EASE_OUT],
+    )
+
+
+@dataclass
+class LayeredShot:
+    """A shot built from a background plus animated elements."""
+
+    card: object          # LayeredCard, kept loose to avoid a cycle
+    hold: float
+    kind: str = "statement"
+    audio: Path | None = None
+
+
+def build_layered_short(
+    shots: list[LayeredShot],
+    out: Path,
+    music: Path | None = None,
+    music_gain_db: float = -22.0,
+    crossfade: float = 0.16,
+) -> tuple[Path, float]:
+    """Render shots whose parts animate on individually.
+
+    The crossfade is short — 0.16s. A longer dissolve leaves two cards
+    legibly overlapping, which reads as a mistake rather than a
+    transition when both carry text.
+
+    The background of each shot drifts as before, so the frame stays
+    alive between entrances; the elements ride on top of it with their
+    own arrivals. That combination is what separates this from a
+    slideshow with a zoom on it.
+    """
+    try:
+        import movis as mv
+    except ImportError as exc:  # pragma: no cover - dependency guard
+        raise MotionError("movis is not installed — run `pip install movis`") from exc
+
+    if not shots:
+        raise MotionError("no shots to render")
+
+    starts: list[float] = []
+    cursor = 0.0
+    for shot in shots:
+        starts.append(cursor)
+        cursor += max(shot.hold - crossfade, 0.5)
+    total = starts[-1] + shots[-1].hold
+
+    scene = mv.layer.Composition(size=(W, H), duration=total)
+
+    for i, (shot, start) in enumerate(zip(shots, starts)):
+        # Each shot is its own composition, so its elements fade in and
+        # out together at the cut rather than individually.
+        sub = mv.layer.Composition(size=(W, H), duration=shot.hold)
+
+        bg = sub.add_layer(
+            mv.layer.Image(str(shot.card.background), duration=shot.hold),
+            name="bg",
+        )
+        _drift(bg, shot.hold, i)
+
+        for j, element in enumerate(shot.card.elements):
+            item = sub.add_layer(
+                mv.layer.Image(str(element.image), duration=shot.hold),
+                name=f"el{j}",
+            )
+            _entrance(item, element.enter, element.at * shot.hold * 0.8, shot.hold)
+
+        item = scene.add_layer(sub, name=f"shot{i}", offset=start)
+        _fade(
+            item, shot.hold,
+            fade_in=0.0 if i == 0 else crossfade,
+            fade_out=crossfade if i < len(shots) - 1 else 0.5,
+        )
+
+        if shot.audio and shot.audio.exists():
+            scene.add_layer(
+                mv.layer.Audio(str(shot.audio)),
+                name=f"vo{i}",
+                offset=start + (0.0 if i == 0 else crossfade * 0.55),
+            )
+
+    if music and music.exists():
+        scene.add_layer(
+            mv.layer.Audio(str(music)), name="music",
+            offset=0.0, audio_level=music_gain_db,
+        )
+
+    out.parent.mkdir(parents=True, exist_ok=True)
+    log.info("rendering %d layered shots, %.1fs…", len(shots), total)
+    scene.write_video(str(out), fps=FPS)
+    return out, total
 
 
 def build_motion_short(
