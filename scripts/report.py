@@ -104,6 +104,69 @@ def main() -> int:
               + (f", {GREEN}{adjudicated}{RESET} ambiguous aspects resolved"
                  if adjudicated else ""))
 
+        # ── re-score where sarcasm makes the statistics unreliable ──
+        # Discard every earlier correction first, not only on clusters
+        # flagged this run. Re-scoring an already-corrected number
+        # compounds the adjustment, and a cluster that stops being
+        # flagged should revert rather than keep a stale override.
+        for c in clusters:
+            if c.get("sentiment_statistical"):
+                c["sentiment"] = c.pop("sentiment_statistical")
+
+        flagged = [c for c in clusters if c.get("sarcasm_risk")]
+        if flagged:
+            print(f"{BOLD}Re-scoring {len(flagged)} sarcasm-flagged cluster(s){RESET}")
+            rescored = client.rescore_sentiment(flagged)
+            flipped = 0
+
+            for c in flagged:
+                hit = rescored.get(c["cluster_id"])
+                if not hit:
+                    continue
+
+                stat = c["sentiment"]
+                before = stat["polarity"]
+
+                # A low-confidence re-score is blended with the original
+                # rather than replacing it. The model itself says the
+                # cluster is mixed in those cases, and letting it swing
+                # the number freely produces the opposite error to the
+                # one being fixed — measured, a doubtful cluster was
+                # pushed from +0.25 to +0.60 on a low-confidence call.
+                weight = 1.0 if hit.confidence == "high" else 0.5
+                pos = hit.positive * weight + stat["positive"] * (1 - weight)
+                neu = hit.neutral * weight + stat["neutral"] * (1 - weight)
+                neg = hit.negative * weight + stat["negative"] * (1 - weight)
+
+                # The original is kept rather than overwritten: a
+                # published number that was corrected should be traceable
+                # to what it was corrected from.
+                c["sentiment_statistical"] = dict(stat)
+                c["sentiment"] = {
+                    "positive": round(pos, 3),
+                    "neutral": round(neu, 3),
+                    "negative": round(neg, 3),
+                    "polarity": round(pos - neg, 3),
+                    "intensity": round(pos + neg, 3),
+                    "label": (
+                        "positive" if pos - neg > 0.15
+                        else "negative" if pos - neg < -0.15
+                        else "mixed"
+                    ),
+                    "source": "llm" if weight == 1.0 else "blended",
+                    "confidence": hit.confidence,
+                    "reasoning": hit.reasoning,
+                }
+                after = c["sentiment"]["polarity"]
+                if (before >= 0) != (after >= 0):
+                    flipped += 1
+                    print(f"  {YELLOW}↺{RESET} {c.get('llm_label', '')[:38]} "
+                          f"{DIM}{before:+.2f} → {after:+.2f}{RESET}")
+                    print(f"    {DIM}{hit.reasoning[:96]}{RESET}")
+
+            print(f"  {GREEN}{len(rescored)}{RESET} re-scored"
+                  + (f", {YELLOW}{flipped}{RESET} changed direction" if flipped else ""))
+
         # Recompute totals — the LLM may have reclassified clusters.
         analysis["totals"] = {
             "clustered": sum(c["size"] for c in clusters),

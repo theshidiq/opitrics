@@ -50,6 +50,40 @@ a genuinely new topic and saying so is useful.
 
 Return JSON only."""
 
+RESCORE_SYSTEM = """\
+You re-score the sentiment of YouTube comment clusters that a \
+statistical model probably got wrong.
+
+The model reads surface polarity. It cannot see that 「やっぱりラッコは\
+凄い車ですね🙂」 is mockery, or that 「買いたいと言えるかなあ」 is doubt \
+rather than enthusiasm. You are reading the comments, so you can.
+
+For each cluster return:
+- `positive`, `neutral`, `negative` — shares that sum to 1.0, \
+representing what the commenters actually feel, not what the words \
+literally say.
+- `reasoning` — one sentence naming the specific thing the surface \
+reading gets wrong. If nothing is wrong, say so plainly.
+- `confidence` — "high" when the intent is unmistakable, "low" when the \
+cluster genuinely contains both sincere and sarcastic comments.
+
+Judge the cluster as a whole, weighted by what most of the sampled \
+comments are doing. A single sarcastic comment among nine sincere ones \
+does not invert the cluster.
+
+Do not overcorrect. Sarcasm being *possible* is not sarcasm being \
+*present* — plenty of blunt criticism is entirely sincere, and reading \
+irony into it is as wrong as missing it.
+
+Use the full range and discriminate between clusters. Mockery of a \
+car's name and outright nationalist hostility are both negative, but \
+they are not equally negative, and scoring every corrected cluster at \
+the same extreme makes the numbers useless. Reserve shares above 0.85 \
+for clusters where essentially every comment is hostile. A cluster that \
+is mostly critical with some neutral discussion sits nearer 0.6-0.7.
+
+Return JSON only."""
+
 NARRATIVE_SYSTEM = """\
 You write analysis briefs for an automotive YouTuber preparing a video.
 
@@ -81,6 +115,31 @@ class ClusterName:
     # Set when the LLM adjudicated an aspect the embedding mapper could
     # not separate. None means it saw the candidates and rejected them.
     aspect: str | None = None
+
+
+@dataclass
+class RescoredSentiment:
+    positive: float
+    neutral: float
+    negative: float
+    reasoning: str
+    confidence: str
+
+    @property
+    def polarity(self) -> float:
+        return self.positive - self.negative
+
+    @property
+    def intensity(self) -> float:
+        return self.positive + self.negative
+
+    @property
+    def label(self) -> str:
+        if self.polarity > 0.15:
+            return "positive"
+        if self.polarity < -0.15:
+            return "negative"
+        return "mixed"
 
 
 def _naming_payload(cluster: dict, taxonomy: list[str] | None = None) -> dict:
@@ -201,6 +260,77 @@ class LLMClient:
                     continue
 
         return named
+
+    def rescore_sentiment(
+        self, clusters: list[dict], batch_size: int = 6
+    ) -> dict[int, RescoredSentiment]:
+        """Re-score clusters where the statistical model is unreliable.
+
+        Only called for clusters flagged sarcasm_risk. The local model
+        reads surface polarity and has no way to see that a comment
+        praising a car is mocking it — measured on the Racco corpus, a
+        cluster the LLM itself identified as mockery scored +0.14, and
+        one of open doubt scored +0.25.
+
+        Smaller batches than naming: judging tone needs more of each
+        comment, and getting this wrong in either direction is worse
+        than a bland label.
+        """
+        out: dict[int, RescoredSentiment] = {}
+
+        for start in range(0, len(clusters), batch_size):
+            batch = clusters[start : start + batch_size]
+            payload = {
+                "clusters": [
+                    {
+                        "id": c["cluster_id"],
+                        "label": c.get("llm_label") or c.get("aspect_label"),
+                        "size": c["size"],
+                        "statistical_score": {
+                            "positive": c["sentiment"]["positive"],
+                            "neutral": c["sentiment"]["neutral"],
+                            "negative": c["sentiment"]["negative"],
+                        },
+                        "comments": [q["text"][:300] for q in c["quotes"][:8]],
+                    }
+                    for c in batch
+                ]
+            }
+            instruction = (
+                "Re-score these clusters. Return "
+                '{"clusters":[{"id":<int>,"positive":<float>,'
+                '"neutral":<float>,"negative":<float>,'
+                '"reasoning":"...","confidence":"high|low"}]}\n\n'
+                + json.dumps(payload, ensure_ascii=False)
+            )
+
+            log.info("re-scoring clusters %d-%d…", start + 1, start + len(batch))
+            try:
+                result = self._chat(RESCORE_SYSTEM, instruction, max_tokens=3000)
+            except Exception as exc:  # noqa: BLE001 - keep the original scores
+                log.warning("re-score batch failed: %s", exc)
+                continue
+
+            for item in result.get("clusters", []):
+                try:
+                    pos = float(item["positive"])
+                    neu = float(item["neutral"])
+                    neg = float(item["negative"])
+                except (KeyError, ValueError, TypeError):
+                    continue
+
+                total = pos + neu + neg
+                if total <= 0:
+                    continue
+                out[int(item["id"])] = RescoredSentiment(
+                    positive=pos / total,
+                    neutral=neu / total,
+                    negative=neg / total,
+                    reasoning=str(item.get("reasoning", "")).strip(),
+                    confidence=str(item.get("confidence", "low")).lower(),
+                )
+
+        return out
 
     def write_narrative(self, subject: str, summary: dict) -> dict:
         """Produce the written brief that sits at the top of the report."""
