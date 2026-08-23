@@ -19,6 +19,7 @@ pandas>=2.2.0
 
 # ── LLM (OpenAI-compatible: DeepSeek / OpenRouter / Ollama) ─
 openai>=1.30.0
+requests>=2.31.0
 
 # ── Output ──────────────────────────────────────────────────
 matplotlib>=3.8.0
