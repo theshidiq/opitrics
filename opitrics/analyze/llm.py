@@ -1,0 +1,173 @@
+"""LLM naming and narrative.
+
+The only stage that leaves your machine, and it sends cluster summaries
+— never raw comment dumps. About thirty short payloads per analysis,
+which keeps this at fractions of a cent per run.
+
+Every supported provider (DeepSeek, OpenRouter, Ollama) speaks the
+OpenAI chat-completions dialect, so switching between them is a config
+change rather than a code change.
+"""
+
+from __future__ import annotations
+
+import json
+import logging
+from dataclasses import dataclass
+
+from opitrics.config import LLMConfig
+
+log = logging.getLogger(__name__)
+
+NAMING_SYSTEM = """\
+You analyse YouTube comment clusters about cars. Comments are often in \
+Japanese, Chinese or English — read them in their original language.
+
+For each cluster you receive representative comments and a statistical \
+sentiment score. Return a short, concrete label describing what the \
+cluster is actually about.
+
+Rules:
+- The label must be specific to the content, not generic. "Ground \
+clearance worries" not "Negative feedback".
+- Write labels in English, 2-6 words, no trailing punctuation.
+- The `summary` is one sentence explaining what people are saying and why.
+- If the cluster is not about the car (arguing between commenters, \
+praising the reviewer, political fights), set `is_about_car` to false.
+- `sarcasm_risk` is true when many comments read as sarcastic or ironic, \
+because the statistical sentiment score will likely be wrong for those.
+- Be accurate over charitable. If a cluster is hostile, say so plainly.
+
+Return JSON only."""
+
+NARRATIVE_SYSTEM = """\
+You write analysis briefs for an automotive YouTuber preparing a video.
+
+You receive named comment clusters with sizes and sentiment scores. \
+Write a brief that tells them what the audience actually thinks and \
+which angles are worth covering.
+
+Rules:
+- Lead with the most surprising or contentious finding, not a summary \
+of the methodology.
+- Cite specific numbers (cluster sizes, sentiment scores) — they matter \
+for on-screen credibility.
+- Flag where the data is weak or where sentiment scoring is unreliable.
+- Distinguish clearly between opinions about the CAR and arguments \
+about the brand's country of origin, the reviewer, or other commenters.
+- No preamble, no "in conclusion". Write like a researcher briefing a \
+colleague who is short on time.
+- Plain prose with short paragraphs. Markdown headings are fine.
+
+Return JSON only."""
+
+
+@dataclass
+class ClusterName:
+    label: str
+    summary: str
+    is_about_car: bool
+    sarcasm_risk: bool
+
+
+class LLMClient:
+    def __init__(self, config: LLMConfig, timeout: float = 120.0) -> None:
+        self.config = config
+        self.timeout = timeout
+        self._client = None
+
+    @property
+    def client(self):
+        if self._client is None:
+            from openai import OpenAI
+
+            self._client = OpenAI(
+                api_key=self.config.api_key,
+                base_url=self.config.base_url,
+                timeout=self.timeout,
+            )
+        return self._client
+
+    def _chat(self, system: str, user: str, max_tokens: int = 4000) -> dict:
+        resp = self.client.chat.completions.create(
+            model=self.config.model,
+            messages=[
+                {"role": "system", "content": system},
+                {"role": "user", "content": user},
+            ],
+            max_tokens=max_tokens,
+            temperature=0.3,
+            response_format={"type": "json_object"},
+        )
+        content = resp.choices[0].message.content or "{}"
+        try:
+            return json.loads(content)
+        except json.JSONDecodeError:
+            # Some providers wrap JSON in a fenced block despite the
+            # response_format request.
+            cleaned = content.strip().removeprefix("```json").removeprefix("```")
+            cleaned = cleaned.removesuffix("```").strip()
+            return json.loads(cleaned)
+
+    def name_clusters(self, clusters: list[dict], batch_size: int = 8) -> dict[int, ClusterName]:
+        """Label clusters in batches.
+
+        Batching keeps the request count low while giving the model
+        enough context to distinguish neighbouring clusters from each
+        other — naming them one at a time produces near-duplicate labels.
+        """
+        named: dict[int, ClusterName] = {}
+
+        for start in range(0, len(clusters), batch_size):
+            batch = clusters[start : start + batch_size]
+            payload = {
+                "clusters": [
+                    {
+                        "id": c["cluster_id"],
+                        "size": c["size"],
+                        "sentiment": c["sentiment"]["label"],
+                        "polarity": c["sentiment"]["polarity"],
+                        "mapped_aspect": c.get("aspect_label"),
+                        "comments": [q["text"][:400] for q in c["quotes"][:6]],
+                    }
+                    for c in batch
+                ]
+            }
+            instruction = (
+                "Label each cluster. Return "
+                '{"clusters":[{"id":<int>,"label":"...","summary":"...",'
+                '"is_about_car":<bool>,"sarcasm_risk":<bool>}]}\n\n'
+                + json.dumps(payload, ensure_ascii=False)
+            )
+
+            log.info("naming clusters %d-%d…", start + 1, start + len(batch))
+            try:
+                result = self._chat(NAMING_SYSTEM, instruction)
+            except Exception as exc:  # noqa: BLE001 - one bad batch must not lose the rest
+                log.warning("naming batch failed: %s", exc)
+                continue
+
+            for item in result.get("clusters", []):
+                try:
+                    named[int(item["id"])] = ClusterName(
+                        label=str(item["label"]).strip(),
+                        summary=str(item.get("summary", "")).strip(),
+                        is_about_car=bool(item.get("is_about_car", True)),
+                        sarcasm_risk=bool(item.get("sarcasm_risk", False)),
+                    )
+                except (KeyError, ValueError, TypeError):
+                    continue
+
+        return named
+
+    def write_narrative(self, subject: str, summary: dict) -> dict:
+        """Produce the written brief that sits at the top of the report."""
+        instruction = (
+            f"Subject: {subject}\n\n"
+            "Write the brief. Return "
+            '{"headline":"...","brief":"<markdown>","angles":["...","..."],'
+            '"caveats":["...","..."]}\n\n'
+            + json.dumps(summary, ensure_ascii=False)
+        )
+        log.info("writing narrative…")
+        return self._chat(NARRATIVE_SYSTEM, instruction, max_tokens=6000)

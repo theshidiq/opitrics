@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "opitrics-web",
+      "runtimeExecutable": ".venv/bin/uvicorn",
+      "runtimeArgs": ["opitrics.web.app:app", "--port", "8420", "--reload"],
+      "port": 8420
+    }
+  ]
+}

@@ -1,0 +1,26 @@
+# Secrets — never commit
+.env
+.env.local
+*.key
+
+# Data & caches — all regenerable, and the PNGs are chunky.
+# The SQLite cache is the expensive one to lose (re-fetching costs
+# YouTube quota), so back it up rather than relying on git.
+data/cache/
+data/output/*
+!data/output/.gitkeep
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+
+# Model caches
+.cache/
+
+# macOS
+.DS_Store

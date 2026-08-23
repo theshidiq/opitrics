@@ -1,0 +1,31 @@
+# ── Core ────────────────────────────────────────────────────
+python-dotenv>=1.0.0
+pydantic>=2.6.0
+
+# ── YouTube ingest ──────────────────────────────────────────
+google-api-python-client>=2.120.0
+
+# ── Local NLP / ML (all run on-device) ──────────────────────
+torch>=2.2.0
+sentence-transformers>=3.0.0
+transformers>=4.40.0
+# Tokenizer backends some checkpoints require.
+tiktoken>=0.7.0
+sentencepiece>=0.2.0
+hdbscan>=0.8.33
+scikit-learn>=1.4.0
+numpy>=1.26.0
+pandas>=2.2.0
+
+# ── LLM (OpenAI-compatible: DeepSeek / OpenRouter / Ollama) ─
+openai>=1.30.0
+
+# ── Output ──────────────────────────────────────────────────
+matplotlib>=3.8.0
+# Reads font cmaps so unrenderable glyphs are stripped, not shipped as tofu.
+fonttools>=4.50.0
+jinja2>=3.1.0
+
+# ── Web UI ──────────────────────────────────────────────────
+fastapi>=0.110.0
+uvicorn[standard]>=0.29.0

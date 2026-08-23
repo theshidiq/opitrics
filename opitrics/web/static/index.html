@@ -1,0 +1,613 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Opitrics</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,400;0,600;0,700;1,400&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --paper:#FBFAF7;
+  --paper-2:#F4F2EC;
+  --rule:#DBD7CC;
+  --rule-soft:#E8E5DC;
+  --ink:#1A1917;
+  --ink-2:#4A473F;
+  --ink-3:#807B6E;
+  --accent:#8C2B18;
+  --pos:#2C6E49;
+  --neg:#A3341F;
+  --neutral:#8A8578;
+}
+*{box-sizing:border-box}
+html{-webkit-font-smoothing:antialiased}
+body{
+  margin:0;background:var(--paper);color:var(--ink);
+  font-family:"Spectral",Georgia,serif;font-size:17px;line-height:1.62;
+}
+.mono{font-family:"IBM Plex Mono",ui-monospace,monospace;font-variant-numeric:tabular-nums}
+.sans{font-family:"IBM Plex Sans",system-ui,sans-serif}
+
+/* ── masthead ── */
+header.masthead{
+  border-bottom:2px solid var(--ink);
+  padding:26px 0 14px;margin-bottom:0;
+}
+.masthead-inner{
+  max-width:1140px;margin:0 auto;padding:0 28px;
+  display:flex;align-items:flex-end;justify-content:space-between;gap:24px;flex-wrap:wrap;
+}
+.logo{font-size:40px;font-weight:700;letter-spacing:-.028em;line-height:1;margin:0}
+.logo span{color:var(--accent)}
+.masthead-meta{
+  font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--ink-3);text-align:right;line-height:1.9;
+}
+.dateline{
+  border-bottom:1px solid var(--rule);
+  font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--ink-3);
+}
+.dateline-inner{max-width:1140px;margin:0 auto;padding:9px 28px;
+  display:flex;justify-content:space-between;gap:18px;flex-wrap:wrap}
+
+/* ── layout ── */
+.wrap{max-width:1140px;margin:0 auto;padding:0 28px 90px}
+.cols{display:grid;grid-template-columns:1fr 316px;gap:44px;align-items:start}
+@media(max-width:940px){.cols{grid-template-columns:1fr;gap:34px}}
+
+/* ── section headings ── */
+.section-rule{
+  display:flex;align-items:center;gap:14px;
+  margin:38px 0 20px;padding-top:16px;border-top:1px solid var(--ink);
+}
+.section-rule:first-child{margin-top:26px}
+.section-rule h2{
+  font-family:"IBM Plex Sans",sans-serif;font-size:12px;font-weight:600;
+  letter-spacing:.16em;text-transform:uppercase;margin:0;color:var(--ink);
+}
+.section-rule .count{
+  font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--ink-3);
+  margin-left:auto;
+}
+
+/* ── lede story ── */
+.lede{padding-bottom:30px;border-bottom:1px solid var(--rule)}
+.kicker{
+  font-family:"IBM Plex Sans",sans-serif;font-size:11px;font-weight:600;
+  letter-spacing:.15em;text-transform:uppercase;color:var(--accent);
+  margin:0 0 10px;
+}
+.lede h1{
+  font-size:clamp(30px,3.9vw,46px);line-height:1.1;letter-spacing:-.018em;
+  margin:0 0 14px;font-weight:700;text-wrap:balance;cursor:pointer;
+}
+.lede h1:hover{color:var(--accent)}
+.standfirst{font-size:19px;line-height:1.55;color:var(--ink-2);margin:0 0 18px;max-width:62ch}
+.byline{
+  font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.06em;
+  color:var(--ink-3);border-top:1px solid var(--rule-soft);padding-top:11px;
+}
+
+/* ── figures ── */
+figure{margin:20px 0 0}
+figure img{
+  width:100%;display:block;border:1px solid var(--rule);
+  background:var(--paper-2);
+}
+figcaption{
+  font-family:"IBM Plex Sans",sans-serif;font-size:12px;color:var(--ink-3);
+  padding-top:8px;border-top:1px solid var(--rule-soft);margin-top:9px;
+}
+.figrow{display:grid;grid-template-columns:1fr 1fr;gap:22px;margin-top:22px}
+@media(max-width:700px){.figrow{grid-template-columns:1fr}}
+
+/* ── story list ── */
+.story{
+  display:grid;grid-template-columns:1fr auto;gap:22px;
+  padding:19px 0;border-bottom:1px solid var(--rule-soft);cursor:pointer;
+}
+.story:hover h3{color:var(--accent)}
+.story h3{font-size:20px;line-height:1.28;margin:0 0 6px;font-weight:600;letter-spacing:-.008em}
+.story p{margin:0;color:var(--ink-2);font-size:15.5px;line-height:1.5;max-width:58ch}
+.story-meta{
+  font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--ink-3);
+  margin-top:8px;letter-spacing:.03em;
+}
+.story-num{
+  font-family:"IBM Plex Mono",monospace;font-size:26px;color:var(--rule);
+  line-height:1;font-weight:500;min-width:44px;text-align:right;
+}
+
+/* ── cluster rows ── */
+.rows{border-top:1px solid var(--ink)}
+.row{
+  display:grid;grid-template-columns:1fr 128px 74px;gap:16px;align-items:center;
+  padding:13px 0;border-bottom:1px solid var(--rule-soft);
+}
+.row-label{font-size:16px;line-height:1.35}
+.row-label b{font-weight:600}
+.row-label em{
+  font-style:normal;font-family:"IBM Plex Mono",monospace;font-size:10.5px;
+  color:var(--ink-3);letter-spacing:.05em;display:block;margin-top:3px;
+}
+.gauge{height:16px;position:relative;background:var(--paper-2)}
+.gauge i{position:absolute;top:0;bottom:0;display:block}
+.gauge .zero{position:absolute;top:0;bottom:0;left:50%;width:1px;background:var(--rule)}
+.row-n{
+  font-family:"IBM Plex Mono",monospace;font-size:13px;text-align:right;color:var(--ink-2);
+}
+.tag{
+  display:inline-block;font-family:"IBM Plex Mono",monospace;font-size:9.5px;
+  letter-spacing:.09em;text-transform:uppercase;padding:1px 6px;
+  border:1px solid var(--rule);color:var(--ink-3);margin-left:7px;vertical-align:1px;
+}
+.tag.meta{border-color:#C9B79A;color:#8A6D3B;background:#FBF3E3}
+.tag.unmapped{border-color:#B9C4CE;color:#4F6A82;background:#EFF4F8}
+
+/* ── sidebar ── */
+aside{position:sticky;top:22px}
+.panel{border-top:1px solid var(--ink);padding-top:14px;margin-bottom:30px}
+.panel h2{
+  font-family:"IBM Plex Sans",sans-serif;font-size:12px;font-weight:600;
+  letter-spacing:.16em;text-transform:uppercase;margin:0 0 13px;
+}
+.field{margin-bottom:11px}
+.field label{
+  display:block;font-family:"IBM Plex Mono",monospace;font-size:10px;
+  letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);margin-bottom:4px;
+}
+input,select{
+  width:100%;padding:8px 10px;border:1px solid var(--rule);background:#fff;
+  font-family:"IBM Plex Sans",sans-serif;font-size:14px;color:var(--ink);
+  border-radius:0;
+}
+input:focus,select:focus{outline:2px solid var(--accent);outline-offset:-2px}
+button{
+  width:100%;padding:9px 12px;background:var(--ink);color:var(--paper);
+  border:none;font-family:"IBM Plex Sans",sans-serif;font-size:13px;
+  font-weight:600;letter-spacing:.04em;cursor:pointer;border-radius:0;
+}
+button:hover{background:var(--accent)}
+button:disabled{background:var(--rule);color:var(--ink-3);cursor:not-allowed}
+button.ghost{background:none;color:var(--ink);border:1px solid var(--ink);margin-top:7px}
+button.ghost:hover{background:var(--ink);color:var(--paper)}
+
+.quota{font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--ink-3)}
+.quota-bar{height:3px;background:var(--rule-soft);margin:6px 0 3px}
+.quota-bar i{display:block;height:100%;background:var(--accent)}
+
+.log{
+  background:var(--paper-2);border:1px solid var(--rule);padding:10px 12px;
+  font-family:"IBM Plex Mono",monospace;font-size:11px;line-height:1.65;
+  color:var(--ink-2);max-height:230px;overflow-y:auto;white-space:pre-wrap;
+  word-break:break-word;
+}
+.log-status{
+  font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.1em;
+  text-transform:uppercase;margin-bottom:7px;
+}
+.log-status.running{color:var(--accent)}
+.log-status.done{color:var(--pos)}
+.log-status.failed{color:var(--neg)}
+
+.hot{border-bottom:1px solid var(--rule-soft);padding:11px 0;cursor:pointer;
+  display:grid;grid-template-columns:22px 1fr;gap:11px}
+.hot:hover .hot-name{color:var(--accent)}
+.hot-rank{font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--ink-3)}
+.hot-name{font-size:15.5px;font-weight:600;line-height:1.3}
+.hot-meta{font-family:"IBM Plex Mono",monospace;font-size:10.5px;color:var(--ink-3);margin-top:3px}
+.heat{height:2px;background:var(--accent);margin-top:6px}
+
+.empty{color:var(--ink-3);font-size:15px;font-style:italic;padding:14px 0}
+
+/* ── quotes ── */
+.quote{
+  border-left:2px solid var(--rule);padding:2px 0 2px 14px;margin:10px 0 0;
+  font-size:15px;color:var(--ink-2);line-height:1.5;
+}
+.quote span{
+  display:block;font-family:"IBM Plex Mono",monospace;font-size:10.5px;
+  color:var(--ink-3);margin-top:4px;
+}
+details summary{
+  cursor:pointer;font-family:"IBM Plex Mono",monospace;font-size:11px;
+  letter-spacing:.06em;color:var(--ink-3);padding:5px 0;
+}
+details summary:hover{color:var(--accent)}
+details[open] summary{color:var(--ink-2)}
+
+.back{
+  font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--ink-3);cursor:pointer;
+  display:inline-block;margin:22px 0 0;
+}
+.back:hover{color:var(--accent)}
+.pills{display:flex;gap:7px;flex-wrap:wrap;margin-top:8px}
+.pill{
+  font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.07em;
+  padding:3px 8px;border:1px solid var(--rule);color:var(--ink-2);cursor:pointer;
+}
+.pill.on{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+ul.angles{padding-left:19px;margin:0;color:var(--ink-2)}
+ul.angles li{margin-bottom:9px;font-size:15.5px;line-height:1.5}
+</style>
+</head>
+<body>
+
+<header class="masthead">
+  <div class="masthead-inner">
+    <h1 class="logo">Opi<span>trics</span></h1>
+    <div class="masthead-meta" id="mastMeta">—</div>
+  </div>
+</header>
+<div class="dateline">
+  <div class="dateline-inner">
+    <span id="dateline">—</span>
+    <span id="quotaLine">—</span>
+  </div>
+</div>
+
+<div class="wrap">
+  <div class="cols">
+    <main id="main"><div class="empty">Loading…</div></main>
+
+    <aside>
+      <div class="panel">
+        <h2>New analysis</h2>
+        <div class="field">
+          <label>subject slug</label>
+          <input id="fSubject" placeholder="byd-racco">
+        </div>
+        <div class="field">
+          <label>search query</label>
+          <input id="fQuery" placeholder="BYD ラッコ 試乗">
+        </div>
+        <div class="field">
+          <label>region · videos</label>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px">
+            <select id="fRegion">
+              <option value="">any</option>
+              <option>JP</option><option>US</option><option>GB</option>
+              <option>DE</option><option>AU</option><option>ID</option>
+            </select>
+            <input id="fLimit" type="number" value="6" min="1" max="20">
+          </div>
+        </div>
+        <button id="btnFetch">Fetch comments</button>
+        <button class="ghost" id="btnDiscover">Sweep what's hot</button>
+      </div>
+
+      <div class="panel" id="runPanel" style="display:none">
+        <h2>Analyse</h2>
+        <div class="field">
+          <label>vehicle type</label>
+          <div class="pills" id="typePills">
+            <span class="pill" data-type="kei">kei</span>
+            <span class="pill" data-type="ev">ev</span>
+            <span class="pill" data-type="truck">truck</span>
+          </div>
+        </div>
+        <button id="btnRun" style="margin-top:11px">Cluster · score · report</button>
+      </div>
+
+      <div class="panel" id="logPanel" style="display:none">
+        <h2>Progress</h2>
+        <div class="log-status" id="logStatus">—</div>
+        <div class="log" id="logBox"></div>
+      </div>
+
+      <div class="panel">
+        <h2>Hot right now</h2>
+        <div id="hotList"><div class="empty">No sweep yet.</div></div>
+      </div>
+
+      <div class="panel">
+        <h2>Quota</h2>
+        <div class="quota">
+          <div class="quota-bar"><i id="quotaFill" style="width:0%"></i></div>
+          <span id="quotaText">—</span>
+        </div>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<script>
+const $ = s => document.querySelector(s);
+const fmt = n => (n ?? 0).toLocaleString();
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c =>
+  ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+let state = { subjects: [], view: 'feed', subject: null, types: new Set(['kei','ev']) };
+
+// ── chrome ──────────────────────────────────────────────
+
+function paintDateline() {
+  const d = new Date();
+  $('#dateline').textContent = d.toLocaleDateString('en-GB',
+    {weekday:'long', day:'numeric', month:'long', year:'numeric'});
+}
+
+async function loadQuota() {
+  const q = await fetch('/api/quota').then(r => r.json());
+  const pct = Math.min(100, 100 * q.used / q.limit);
+  $('#quotaFill').style.width = pct + '%';
+  $('#quotaText').textContent = `${fmt(q.used)} / ${fmt(q.limit)} units used today`;
+  $('#quotaLine').textContent = `YouTube quota ${fmt(q.remaining)} remaining`;
+}
+
+// ── feed ────────────────────────────────────────────────
+
+async function loadFeed() {
+  state.subjects = await fetch('/api/subjects').then(r => r.json());
+  const done = state.subjects.filter(s => s.has_analysis);
+  $('#mastMeta').innerHTML =
+    `${state.subjects.length} subject${state.subjects.length===1?'':'s'}<br>` +
+    `${fmt(state.subjects.reduce((a,s)=>a+s.comments,0))} comments held`;
+
+  if (!state.subjects.length) {
+    $('#main').innerHTML = `<div class="section-rule"><h2>No analyses yet</h2></div>
+      <p class="empty">Fetch a subject on the right, or sweep for what's hot.</p>`;
+    return;
+  }
+
+  const lede = done[0] || state.subjects[0];
+  const rest = state.subjects.filter(s => s !== lede);
+  $('#main').innerHTML = ledeHtml(lede) + restHtml(rest);
+  bindFeed();
+}
+
+function ledeHtml(s) {
+  const t = s.totals;
+  const share = t ? Math.round(100 * t.car / Math.max(t.clustered,1)) : null;
+  const figs = s.has_analysis ? `
+    <figure>
+      <img src="/chart/${encodeURIComponent(s.subject)}/aspects" alt="aspect sentiment"
+           onerror="this.closest('figure').remove()">
+      <figcaption>What people talk about, and how they feel about it.
+        Bars show sentiment polarity; numbers are comment counts.</figcaption>
+    </figure>
+    <div class="figrow">
+      <figure>
+        <img src="/chart/${encodeURIComponent(s.subject)}/volume-intensity" alt="volume vs intensity"
+             onerror="this.closest('figure').remove()">
+        <figcaption>Volume against intensity — the top-left quadrant is where small,
+          angry clusters hide.</figcaption>
+      </figure>
+      <figure>
+        <img src="/chart/${encodeURIComponent(s.subject)}/composition" alt="composition"
+             onerror="this.closest('figure').remove()">
+        <figcaption>How much of the conversation is actually about the car.</figcaption>
+      </figure>
+    </div>` : '';
+
+  return `
+  <div class="section-rule"><h2>Lead analysis</h2>
+    <span class="count">${esc(s.display_name || s.subject)}</span></div>
+  <article class="lede">
+    <p class="kicker">${s.has_analysis ? 'Comment analysis' : 'Awaiting analysis'}</p>
+    <h1 data-subject="${esc(s.subject)}">${esc(s.headline || s.display_name || s.subject)}</h1>
+    ${share !== null ? `<p class="standfirst">Of ${fmt(t.clustered)} clustered comments,
+      ${share}% are actually about the car. The rest argue about the brand's origin,
+      the reviewer, or each other.</p>` : ''}
+    <p class="byline">${fmt(s.comments)} comments · ${s.videos} videos${
+      s.last_fetch ? ' · fetched ' + esc(s.last_fetch.slice(0,10)) : ''}</p>
+    ${figs}
+  </article>`;
+}
+
+function restHtml(list) {
+  if (!list.length) return '';
+  return `<div class="section-rule"><h2>More subjects</h2>
+    <span class="count">${list.length}</span></div>` +
+    list.map((s,i) => `
+      <article class="story" data-subject="${esc(s.subject)}">
+        <div>
+          <h3>${esc(s.headline || s.display_name || s.subject)}</h3>
+          <p>${s.has_analysis ? 'Analysed' : 'Fetched, not yet analysed'} ·
+             ${fmt(s.comments)} comments across ${s.videos} videos.</p>
+          <div class="story-meta">${esc(s.subject)}${
+            s.last_fetch ? ' · ' + esc(s.last_fetch.slice(0,10)) : ''}</div>
+        </div>
+        <div class="story-num">${String(i+2).padStart(2,'0')}</div>
+      </article>`).join('');
+}
+
+function bindFeed() {
+  document.querySelectorAll('[data-subject]').forEach(el =>
+    el.onclick = () => openSubject(el.dataset.subject));
+}
+
+// ── detail ──────────────────────────────────────────────
+
+async function openSubject(subject) {
+  state.subject = subject;
+  $('#runPanel').style.display = 'block';
+  $('#fSubject').value = subject;
+
+  const res = await fetch('/api/subjects/' + encodeURIComponent(subject));
+  if (!res.ok) {
+    $('#main').innerHTML = `<div class="section-rule"><h2>${esc(subject)}</h2></div>
+      <p class="empty">Fetched but not analysed yet. Use “Cluster · score · report”.</p>
+      <span class="back" onclick="loadFeed()">← back to feed</span>`;
+    return;
+  }
+  const d = await res.json();
+  const n = d.narrative || {};
+  const car = d.clusters.filter(c => !c.is_meta && !c.unmapped);
+  const meta = d.clusters.filter(c => c.is_meta);
+  const un = d.clusters.filter(c => c.unmapped && !c.is_meta);
+
+  $('#main').innerHTML = `
+    <div class="section-rule"><h2>${esc(d.display_name || subject)}</h2>
+      <span class="count">${fmt(d.totals.clustered)} clustered</span></div>
+    <article class="lede">
+      <p class="kicker">Comment analysis</p>
+      <h1>${esc(n.headline || d.display_name || subject)}</h1>
+      <p class="byline">${fmt(d.totals.car)} about the car ·
+        ${fmt(d.totals.meta)} meta · ${fmt(d.totals.unmapped)} unmapped ·
+        <a href="/report/${encodeURIComponent(subject)}" target="_blank"
+           style="color:var(--accent)">full report ↗</a></p>
+      <figure>
+        <img src="/chart/${encodeURIComponent(subject)}/aspects" alt=""
+             onerror="this.closest('figure').remove()">
+        <figcaption>Sentiment by theme, ranked by volume.</figcaption>
+      </figure>
+      <div class="figrow">
+        <figure><img src="/chart/${encodeURIComponent(subject)}/volume-intensity" alt=""
+          onerror="this.closest('figure').remove()">
+          <figcaption>Volume against intensity.</figcaption></figure>
+        <figure><img src="/chart/${encodeURIComponent(subject)}/composition" alt=""
+          onerror="this.closest('figure').remove()">
+          <figcaption>Composition of the conversation.</figcaption></figure>
+      </div>
+    </article>
+
+    ${n.angles?.length ? `<div class="section-rule"><h2>Angles worth covering</h2></div>
+      <ul class="angles">${n.angles.map(a=>`<li>${esc(a)}</li>`).join('')}</ul>` : ''}
+
+    <div class="section-rule"><h2>About the car</h2>
+      <span class="count">${car.length} themes</span></div>
+    ${rowsHtml(car)}
+
+    ${un.length ? `<div class="section-rule"><h2>Unmapped</h2>
+      <span class="count">${un.length}</span></div>${rowsHtml(un)}` : ''}
+
+    ${meta.length ? `<div class="section-rule"><h2>Not about the car</h2>
+      <span class="count">${meta.length}</span></div>${rowsHtml(meta)}` : ''}
+
+    ${n.caveats?.length ? `<div class="section-rule"><h2>Before you quote a number</h2></div>
+      <ul class="angles">${n.caveats.map(c=>`<li>${esc(c)}</li>`).join('')}</ul>` : ''}
+
+    <span class="back" onclick="loadFeed()">← back to feed</span>`;
+}
+
+function rowsHtml(list) {
+  if (!list.length) return '<p class="empty">None.</p>';
+  return '<div class="rows">' + list.map(c => {
+    const p = c.polarity;
+    const w = Math.min(Math.abs(p), 1) * 50;
+    const col = p > .15 ? 'var(--pos)' : p < -.15 ? 'var(--neg)' : 'var(--neutral)';
+    const bar = p >= 0
+      ? `<i style="left:50%;width:${w}%;background:${col}"></i>`
+      : `<i style="right:50%;width:${w}%;background:${col}"></i>`;
+    const tag = c.is_meta ? '<span class="tag meta">meta</span>'
+              : c.unmapped ? '<span class="tag unmapped">unmapped</span>' : '';
+    const sar = c.sarcasm_risk ? '<span class="tag">sarcasm?</span>' : '';
+    const quotes = c.quotes?.length ? `<details><summary>quotes</summary>${
+      c.quotes.map(q=>`<div class="quote">${esc(q.text.slice(0,240))}
+        <span>${fmt(q.like_count)} likes</span></div>`).join('')}</details>` : '';
+    return `<div class="row">
+      <div class="row-label"><b>${esc(c.label)}</b>${tag}${sar}
+        ${c.summary ? `<em>${esc(c.summary.slice(0,110))}</em>` : ''}
+        ${quotes}</div>
+      <div class="gauge"><div class="zero"></div>${bar}</div>
+      <div class="row-n">${fmt(c.size)}<br>
+        <span style="color:${col}">${p>=0?'+':''}${p.toFixed(2)}</span></div>
+    </div>`;
+  }).join('') + '</div>';
+}
+
+// ── discovery ───────────────────────────────────────────
+
+async function loadHot() {
+  const hot = await fetch('/api/discovery').then(r => r.json());
+  if (!hot.length) { $('#hotList').innerHTML = '<div class="empty">No sweep yet.</div>'; return; }
+  const peak = Math.max(...hot.map(h => h.score));
+  $('#hotList').innerHTML = hot.slice(0,8).map(h => `
+    <div class="hot" data-name="${esc(h.name)}" data-slug="${esc(h.subject)}">
+      <div class="hot-rank">${String(h.rank).padStart(2,'0')}</div>
+      <div>
+        <div class="hot-name">${esc(h.name)}</div>
+        <div class="hot-meta">${h.channels} channels · ${fmt(h.views)} views${
+          h.argument_rate > 3 ? ` · ${h.argument_rate.toFixed(1)} c/1k` : ''}</div>
+        <div class="heat" style="width:${Math.round(100*h.score/peak)}%"></div>
+      </div>
+    </div>`).join('');
+
+  document.querySelectorAll('.hot').forEach(el => el.onclick = () => {
+    $('#fSubject').value = el.dataset.slug;
+    $('#fQuery').value = el.dataset.name;
+    $('#fSubject').focus();
+  });
+}
+
+// ── jobs ────────────────────────────────────────────────
+
+let polling = null;
+
+function watch(job) {
+  $('#logPanel').style.display = 'block';
+  clearInterval(polling);
+  polling = setInterval(async () => {
+    const j = await fetch('/api/jobs/' + job.id).then(r => r.json());
+    $('#logStatus').className = 'log-status ' + j.status;
+    $('#logStatus').textContent = j.status + (j.error ? ' — ' + j.error : '');
+    const box = $('#logBox');
+    box.textContent = j.lines.join('\n');
+    box.scrollTop = box.scrollHeight;
+    if (j.status !== 'running') {
+      clearInterval(polling);
+      loadQuota(); loadFeed(); loadHot();
+      ['btnFetch','btnRun','btnDiscover'].forEach(b => $('#'+b).disabled = false);
+    }
+  }, 1200);
+}
+
+async function post(url, body) {
+  const r = await fetch(url, {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify(body)
+  });
+  if (!r.ok) { alert((await r.json()).detail || 'request failed'); return null; }
+  return r.json();
+}
+
+$('#btnFetch').onclick = async () => {
+  const subject = $('#fSubject').value.trim();
+  const query = $('#fQuery').value.trim();
+  if (!subject) return alert('Give the subject a slug, e.g. byd-racco');
+  if (!query) return alert('Give a search query');
+  $('#btnFetch').disabled = true;
+  const job = await post('/api/fetch', {
+    subject, query, region: $('#fRegion').value || null,
+    limit: parseInt($('#fLimit').value, 10) || 6
+  });
+  if (job) { state.subject = subject; $('#runPanel').style.display='block'; watch(job); }
+  else $('#btnFetch').disabled = false;
+};
+
+$('#btnRun').onclick = async () => {
+  if (!state.subject) return alert('Pick or fetch a subject first');
+  $('#btnRun').disabled = true;
+  const job = await post('/api/analyze',
+    { subject: state.subject, types: [...state.types] });
+  if (job) watch(job); else $('#btnRun').disabled = false;
+};
+
+$('#btnDiscover').onclick = async () => {
+  $('#btnDiscover').disabled = true;
+  const job = await post('/api/discover', { top: 12 });
+  if (job) watch(job); else $('#btnDiscover').disabled = false;
+};
+
+document.querySelectorAll('#typePills .pill').forEach(p => {
+  if (state.types.has(p.dataset.type)) p.classList.add('on');
+  p.onclick = () => {
+    p.classList.toggle('on');
+    state.types.has(p.dataset.type)
+      ? state.types.delete(p.dataset.type)
+      : state.types.add(p.dataset.type);
+  };
+});
+
+paintDateline();
+loadQuota();
+loadFeed();
+loadHot();
+</script>
+</body>
+</html>
