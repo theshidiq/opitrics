@@ -38,6 +38,16 @@ praising the reviewer, political fights), set `is_about_car` to false.
 because the statistical sentiment score will likely be wrong for those.
 - Be accurate over charitable. If a cluster is hostile, say so plainly.
 
+Some clusters arrive with `choose_from` — the embedding model could \
+not separate its top candidates, so its `current_guess` is unreliable. \
+Read the comments and pick the key from `choose_from` that actually \
+fits, returning it as `aspect`. Keep the current guess only if it is \
+genuinely right. Prefer the specific over the general: a cluster of \
+nationalist argument is `brand.geopolitics`, not `meta.chatter`; \
+accusations of paid promotion are `meta.sponsorship`, not `meta.chatter`. \
+Return `aspect` as null only when nothing in the list fits — that marks \
+a genuinely new topic and saying so is useful.
+
 Return JSON only."""
 
 NARRATIVE_SYSTEM = """\
@@ -68,6 +78,39 @@ class ClusterName:
     summary: str
     is_about_car: bool
     sarcasm_risk: bool
+    # Set when the LLM adjudicated an aspect the embedding mapper could
+    # not separate. None means it saw the candidates and rejected them.
+    aspect: str | None = None
+
+
+def _naming_payload(cluster: dict, taxonomy: list[str] | None = None) -> dict:
+    """One cluster, as the naming prompt sees it.
+
+    A weakly-mapped cluster carries the full aspect vocabulary rather
+    than the embedding model's shortlist. Offering only its top three
+    runners-up assumes the right answer is somewhere in them — measured,
+    it often is not: a cluster of nationalist argument was handed
+    candidates that did not include `brand.geopolitics`, so the LLM
+    picked the least-wrong of a bad set.
+    """
+    payload = {
+        "id": cluster["cluster_id"],
+        "size": cluster["size"],
+        "sentiment": cluster["sentiment"]["label"],
+        "polarity": cluster["sentiment"]["polarity"],
+        "mapped_aspect": cluster.get("aspect_label"),
+        "comments": [q["text"][:400] for q in cluster["quotes"][:6]],
+    }
+    # Offer candidates when the mapper abstained, or when it chose by a
+    # hair — a margin under 0.02 means the runner-up was essentially
+    # tied, and the LLM is better placed to break that tie.
+    weak = cluster.get("margin", 1.0) < 0.02
+    if not cluster.get("aspect") or weak:
+        payload["current_guess"] = cluster.get("aspect")
+        payload["choose_from"] = taxonomy or [
+            k for k, _ in cluster.get("runners_up", [])[:3]
+        ]
+    return payload
 
 
 class LLMClient:
@@ -109,7 +152,12 @@ class LLMClient:
             cleaned = cleaned.removesuffix("```").strip()
             return json.loads(cleaned)
 
-    def name_clusters(self, clusters: list[dict], batch_size: int = 8) -> dict[int, ClusterName]:
+    def name_clusters(
+        self,
+        clusters: list[dict],
+        batch_size: int = 8,
+        taxonomy: list[str] | None = None,
+    ) -> dict[int, ClusterName]:
         """Label clusters in batches.
 
         Batching keeps the request count low while giving the model
@@ -121,22 +169,14 @@ class LLMClient:
         for start in range(0, len(clusters), batch_size):
             batch = clusters[start : start + batch_size]
             payload = {
-                "clusters": [
-                    {
-                        "id": c["cluster_id"],
-                        "size": c["size"],
-                        "sentiment": c["sentiment"]["label"],
-                        "polarity": c["sentiment"]["polarity"],
-                        "mapped_aspect": c.get("aspect_label"),
-                        "comments": [q["text"][:400] for q in c["quotes"][:6]],
-                    }
-                    for c in batch
-                ]
+                "clusters": [_naming_payload(c, taxonomy) for c in batch]
             }
             instruction = (
-                "Label each cluster. Return "
+                "Label each cluster. Where `candidate_aspects` is present, "
+                "also choose the aspect that fits, or null if none do. Return "
                 '{"clusters":[{"id":<int>,"label":"...","summary":"...",'
-                '"is_about_car":<bool>,"sarcasm_risk":<bool>}]}\n\n'
+                '"is_about_car":<bool>,"sarcasm_risk":<bool>,'
+                '"aspect":"<key or null>"}]}\n\n'
                 + json.dumps(payload, ensure_ascii=False)
             )
 
@@ -149,11 +189,13 @@ class LLMClient:
 
             for item in result.get("clusters", []):
                 try:
+                    aspect = item.get("aspect")
                     named[int(item["id"])] = ClusterName(
                         label=str(item["label"]).strip(),
                         summary=str(item.get("summary", "")).strip(),
                         is_about_car=bool(item.get("is_about_car", True)),
                         sarcasm_risk=bool(item.get("sarcasm_risk", False)),
+                        aspect=str(aspect) if aspect not in (None, "null", "") else None,
                     )
                 except (KeyError, ValueError, TypeError):
                     continue

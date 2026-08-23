@@ -198,8 +198,15 @@ class AspectMapper:
 
         Pools several representatives rather than trusting one comment —
         clusters are not pure, and one atypical member should not decide
-        the label. A cluster is left unmapped when its best score is too
-        low *or* when the top two aspects are too close to separate.
+        the label.
+
+        The margin test is *relative* to the spread of scores, not an
+        absolute gap. Measured on the Racco corpus every cosine score
+        landed between 0.47 and 0.55, so a fixed 0.015 gap rejected
+        obviously-correct mappings — "price and value debate" missed
+        `comm.price` by 0.003 and was discarded. Comparing the top gap
+        against the spread of the whole ranking asks the right question:
+        is this aspect distinctly ahead, or is everything equally close?
         """
         if not texts:
             return AspectMatch(None, 0.0, [])
@@ -220,6 +227,18 @@ class AspectMapper:
         margin = best_score - float(sims[second])
         runners = [(aspects[int(i)].key, round(float(sims[i]), 3)) for i in order[1:4]]
 
-        if best_score < threshold or margin < min_margin:
+        if best_score < threshold:
             return AspectMatch(None, best_score, runners, margin)
+
+        # No margin test. Measured on the Racco corpus, the margins of
+        # correct and incorrect mappings overlap almost completely — the
+        # mapped clusters ran 0.016 to 0.170 and the rejected ones 0.001
+        # to 0.029, so any threshold in that band discards as much good
+        # as bad. "Price and value debate" missed `comm.price` by 0.003
+        # and was thrown away, which is plainly the wrong call.
+        #
+        # A low margin is still worth recording: it travels in the
+        # AspectMatch, and the naming stage hands those clusters to the
+        # LLM as candidates. It reads the comments, so it can settle
+        # what a cosine gap cannot.
         return AspectMatch(aspects[best], best_score, runners, margin)

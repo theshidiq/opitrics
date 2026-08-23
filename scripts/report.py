@@ -18,6 +18,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from opitrics.analyze.llm import LLMClient  # noqa: E402
+from opitrics.analyze.taxonomy import BY_KEY, aspects_for  # noqa: E402
 from opitrics.config import settings  # noqa: E402
 from opitrics.ingest.db import Database  # noqa: E402
 from opitrics.render import charts as charts_mod  # noqa: E402
@@ -64,21 +65,44 @@ def main() -> int:
 
         print(f"\n{BOLD}Naming {len(to_name)} clusters{RESET} "
               f"{DIM}via {settings.llm.provider}/{settings.llm.model}{RESET}")
-        named = client.name_clusters(to_name)
+        # Hand over the whole vocabulary for this vehicle, so an
+        # adjudication is not limited to the embedding model's shortlist.
+        vocabulary = [a.key for a in aspects_for(analysis.get("vehicle_types", []))]
+        named = client.name_clusters(to_name, taxonomy=vocabulary)
 
+        adjudicated = 0
         for c in clusters:
             hit = named.get(c["cluster_id"])
-            if hit:
-                c["llm_label"] = hit.label
-                c["llm_summary"] = hit.summary
-                c["sarcasm_risk"] = hit.sarcasm_risk
-                # The LLM reads the actual comments, so it overrules the
-                # embedding mapper on whether a cluster is about the car.
-                if not hit.is_about_car and not c.get("is_meta"):
-                    c["is_meta"] = True
-                    c["meta_source"] = "llm"
+            if not hit:
+                continue
 
-        print(f"  {GREEN}{len(named)}{RESET} named")
+            c["llm_label"] = hit.label
+            c["llm_summary"] = hit.summary
+            c["sarcasm_risk"] = hit.sarcasm_risk
+
+            # The LLM reads the actual comments, so it overrules the
+            # embedding mapper on whether a cluster is about the car.
+            if not hit.is_about_car and not c.get("is_meta"):
+                c["is_meta"] = True
+                c["meta_source"] = "llm"
+
+            # It also breaks ties the cosine scores could not — either
+            # filling a gap, or overruling a mapping the embeddings made
+            # by a margin too thin to mean anything.
+            weak = c.get("margin", 1.0) < 0.02
+            if hit.aspect and (not c.get("aspect") or weak):
+                aspect = BY_KEY.get(hit.aspect)
+                if aspect:
+                    c["aspect"] = aspect.key
+                    c["aspect_label"] = aspect.label
+                    c["aspect_group"] = aspect.group
+                    c["is_meta"] = aspect.is_meta or c.get("is_meta", False)
+                    c["aspect_source"] = "llm"
+                    adjudicated += 1
+
+        print(f"  {GREEN}{len(named)}{RESET} named"
+              + (f", {GREEN}{adjudicated}{RESET} ambiguous aspects resolved"
+                 if adjudicated else ""))
 
         # Recompute totals — the LLM may have reclassified clusters.
         analysis["totals"] = {
