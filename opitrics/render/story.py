@@ -50,6 +50,20 @@ token {SOURCES_URL} where the link belongs. Set that post's `kind` to
 For quotes, give the original text verbatim and a natural English \
 translation — not a literal gloss.
 
+The translation is published beside the original with a link to it, so \
+a reader can check your work. Three failures show up repeatedly and all \
+of them are avoidable:
+- Dropping a closing question or hedge (かなあ, けど, でしょう) and \
+turning a doubtful remark into a flat assertion.
+- Omitting the specific comparison the commenter was making, which is \
+usually the substance of what they said.
+- Rendering sarcasm as sincerity when the irony sits in politeness or \
+an emoji rather than in the words.
+
+If the comment is too long to translate fully, translate one complete \
+thought rather than compressing the whole thing into something the \
+commenter did not quite say.
+
 Return JSON only."""
 
 

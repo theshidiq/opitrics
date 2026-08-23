@@ -118,5 +118,19 @@ LLM flags `sarcasm_risk` should not have their polarity quoted as fact.
 rendering. A paraphrased quote would put invented words in a real
 person's mouth on a public timeline.
 
+**Translations are checked before publishing.** `scripts/check_translations.py`
+re-translates every quoted comment independently and reports where the two
+readings disagree. It found 6 disagreements in 20 on the first Racco threads,
+one of them material — a card that dropped a closing rhetorical question and
+changed what the commenter meant. Run it before posting:
+
+```bash
+.venv/bin/python scripts/check_translations.py --subject byd-racco
+```
+
+Running it with the same model that wrote the translations catches slips but
+not systematic blind spots. Point `LLM_PROVIDER` at a different model for a
+genuinely independent read.
+
 **Commenters are not buyers.** This measures perception, not purchase
 intent. Say so on camera.
