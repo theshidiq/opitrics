@@ -25,6 +25,7 @@ from opitrics.render import vertical  # noqa: E402
 from opitrics.render.audio import AudioError, ElevenLabs  # noqa: E402
 from opitrics.render.short import write_short  # noqa: E402
 from opitrics.render.story import verify_quotes  # noqa: E402
+from opitrics.render.motion import MotionError, Shot, build_motion_short  # noqa: E402
 from opitrics.render.video import (  # noqa: E402
     VideoError,
     build_narrated_short,
@@ -53,6 +54,9 @@ def main() -> int:
     ap.add_argument("--no-audio", action="store_true",
                     help="cards and a silent cut only")
     ap.add_argument("--no-sfx", action="store_true")
+    ap.add_argument("--static", action="store_true",
+                    help="hard cuts between still cards instead of animating")
+    ap.add_argument("--crossfade", type=float, default=0.28)
     args = ap.parse_args()
 
     paths = settings.workspace.subject(args.subject).ensure()
@@ -174,23 +178,50 @@ def main() -> int:
     # ── video ───────────────────────────────────────────────
     holds: list[float] = []
     video = out_dir / "short.mp4"
-    if ffmpeg_available():
-        print(f"\n{BOLD}Rendering video{RESET}")
+    music = args.music if args.music and args.music.exists() else None
+    if args.music and not music:
+        print(f"\n{YELLOW}music file not found: {args.music}{RESET}")
+
+    if not ffmpeg_available():
+        print(f"\n{YELLOW}ffmpeg not found — cards written, no video{RESET}")
+    elif args.static:
+        print(f"\n{BOLD}Rendering video{RESET} {DIM}static cuts{RESET}")
         try:
             _, holds = build_narrated_short(
-                cards, narration, video,
-                music=args.music if args.music and args.music.exists() else None,
-                effects=effects,
-                music_gain=args.music_gain,
+                cards, narration, video, music=music,
+                effects=effects, music_gain=args.music_gain,
             )
-            print(f"  {GREEN}{video.name}{RESET} "
-                  f"{DIM}{sum(holds):.1f}s{RESET}")
-            if args.music and not args.music.exists():
-                print(f"  {YELLOW}music file not found: {args.music}{RESET}")
+            print(f"  {GREEN}{video.name}{RESET} {DIM}{sum(holds):.1f}s{RESET}")
         except VideoError as exc:
             print(f"  {YELLOW}{exc}{RESET}")
     else:
-        print(f"\n{YELLOW}ffmpeg not found — cards written, no video{RESET}")
+        print(f"\n{BOLD}Rendering video{RESET} {DIM}animated{RESET}")
+        from opitrics.render.audio import audio_duration
+
+        holds = [
+            max(audio_duration(vo) + 0.55, 2.4) if vo else 2.6
+            for vo in narration
+        ]
+        shots = [
+            Shot(card=c, hold=h, kind=b.kind, audio=vo)
+            for c, h, b, vo in zip(cards, holds, script.beats, narration)
+        ]
+        try:
+            _, total = build_motion_short(
+                shots, video, music=music,
+                music_gain_db=args.music_gain, crossfade=args.crossfade,
+            )
+            print(f"  {GREEN}{video.name}{RESET} {DIM}{total:.1f}s{RESET}")
+        except MotionError as exc:
+            print(f"  {YELLOW}{exc}{RESET}")
+            print(f"  {DIM}falling back to static cuts{RESET}")
+            try:
+                _, holds = build_narrated_short(
+                    cards, narration, video, music=music,
+                    effects=effects, music_gain=args.music_gain,
+                )
+            except VideoError as exc2:
+                print(f"  {YELLOW}{exc2}{RESET}")
 
     # ── script file ─────────────────────────────────────────
     lines = [f"{script.title}", "", f"~{sum(holds) or script.estimated_seconds:.0f}s", ""]
