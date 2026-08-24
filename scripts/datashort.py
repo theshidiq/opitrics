@@ -35,6 +35,7 @@ from opitrics.render.motion import (  # noqa: E402
     MotionError,
     build_layered_short,
 )
+from opitrics.render import remotion as rmt  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 
@@ -94,7 +95,9 @@ def main() -> int:
     ap.add_argument("--no-audio", action="store_true")
     ap.add_argument("--music", type=Path)
     ap.add_argument("--music-gain", type=float, default=-22.0)
-    ap.add_argument("--crossfade", type=float, default=0.16)
+    ap.add_argument("--crossfade", type=float, default=0.18)
+    ap.add_argument("--legacy", action="store_true",
+                    help="use the matplotlib/movis renderer instead of Remotion")
     args = ap.parse_args()
 
     paths = settings.workspace.subject(args.subject).ensure()
@@ -134,61 +137,77 @@ def main() -> int:
                 print(f"  {YELLOW}no freely-licensed images found{RESET}")
 
     # ── build the sequence ──────────────────────────────────
-    print(f"\n{BOLD}Building cards{RESET}")
-    built: list = []
+    # Cards are described, not drawn. Remotion renders each frame in a
+    # browser, so a bar's width comes from the frame number rather than
+    # from one of a handful of pre-drawn images.
+    print(f"\n{BOLD}Building sequence{RESET}")
+    cards: list[dict] = []
     described: list[dict] = []
     car_pct = round(100 * totals["car"] / max(totals["clustered"], 1))
+    eyebrow = display.lower()
 
-    def add(card, kind: str, shows: str) -> None:
-        built.append(card)
-        described.append({"index": len(described) + 1, "kind": kind, "shows": shows})
-        print(f"  {DIM}{len(built):02d} · {kind}{RESET}")
+    def add(card: dict, shows: str) -> None:
+        cards.append(card)
+        described.append({
+            "index": len(described) + 1, "kind": card["kind"], "shows": shows,
+        })
+        print(f"  {DIM}{len(cards):02d} · {card['kind']}{RESET}")
 
-    # Open on the car if there is a photograph; the number lands harder
-    # over something concrete than over an empty frame.
     if photos:
         photo, credit = photos[0]
         add(
-            vcharts.photo_layers(photo, f"{raw:,} comments", credit,
-                                 args.subject, out_dir / "l01"),
-            "photo",
+            {"kind": "photo", "src": str(photo),
+             "caption": f"{raw:,} comments", "credit": credit},
             f"the car, with the headline figure {raw:,} comments",
         )
     else:
         add(
-            layers.hook_layers(f"{raw:,}", "comments read", args.subject,
-                               out_dir / "l01", f"across {videos} videos"),
-            "hook",
+            {"kind": "hook", "figure": f"{raw:,}", "caption": "comments read",
+             "detail": f"across {videos} videos", "eyebrow": eyebrow},
             f"{raw:,} comments across {videos} videos",
         )
 
     add(
-        vcharts.composition_layers(totals, args.subject, out_dir / "l02"),
-        "composition",
+        {"kind": "composition", "title": "what the comments are about",
+         "eyebrow": eyebrow,
+         "segments": [
+             s for s in [
+                 {"value": totals["car"], "label": "about the car",
+                  "colour": "#065FD4"},
+                 {"value": totals["meta"], "label": "about the video, or arguing",
+                  "colour": "#B8860B"},
+                 {"value": totals["unmapped"], "label": "unmapped",
+                  "colour": "#8A8A8A"},
+             ] if s["value"] > 0
+         ]},
         f"only {car_pct}% of comments are about the car itself; "
         f"the rest argue about the brand, the reviewer, or each other",
     )
 
-    add(
-        vcharts.sentiment_bars_layers(clusters, args.subject, out_dir / "l03",
-                                      title="what they argue about"),
-        "bars",
-        "the six biggest themes, ranked by how many comments, "
-        "coloured by sentiment — most are negative",
-    )
-
-    # The strongest single finding, as a figure.
     car_clusters = [c for c in clusters
                     if c.get("aspect") and not c.get("is_meta")]
+    rows = sorted(car_clusters, key=lambda c: -c["size"])[:6]
+    if rows:
+        add(
+            {"kind": "bars", "title": "what they argue about",
+             "eyebrow": eyebrow,
+             "rows": [
+                 {"label": _short(r.get("llm_label") or r["aspect_label"], 34),
+                  "size": r["size"],
+                  "polarity": r["sentiment"]["polarity"]}
+                 for r in rows
+             ]},
+            "the six biggest themes, ranked by how many comments, "
+            "coloured by sentiment — most are negative",
+        )
+
     if car_clusters:
         worst = min(car_clusters, key=lambda c: c["sentiment"]["polarity"])
         add(
-            layers.hook_layers(
-                f"{worst['size']:,}", _short(worst.get("llm_label", "")),
-                args.subject, out_dir / "l04",
-                f"sentiment {worst['sentiment']['polarity']:+.2f}",
-            ),
-            "figure",
+            {"kind": "hook", "figure": f"{worst['size']:,}",
+             "caption": _short(worst.get("llm_label", ""), 30),
+             "detail": f"sentiment {worst['sentiment']['polarity']:+.2f}",
+             "eyebrow": eyebrow},
             f"the most negative theme: {worst.get('llm_label')} — "
             f"{worst['size']:,} comments at {worst['sentiment']['polarity']:+.2f}",
         )
@@ -196,36 +215,32 @@ def main() -> int:
     if len(photos) > 1:
         photo, credit = photos[1]
         add(
-            vcharts.photo_layers(photo, "so is it any good?", credit,
-                                 args.subject, out_dir / "l05"),
-            "photo",
+            {"kind": "photo", "src": str(photo),
+             "caption": "so is it any good?", "credit": credit},
             "the car again, posing the question of whether the criticism is fair",
         )
 
-    best = max(car_clusters, key=lambda c: c["sentiment"]["polarity"]) if car_clusters else None
+    best = (max(car_clusters, key=lambda c: c["sentiment"]["polarity"])
+            if car_clusters else None)
     if best and best["sentiment"]["polarity"] > 0:
         add(
-            layers.statement_layers(
-                _short(best.get("llm_label", ""), 40),
-                args.subject, out_dir / "l06", eyebrow=display,
-            ),
-            "statement",
+            {"kind": "statement",
+             "text": _short(best.get("llm_label", ""), 46),
+             "eyebrow": eyebrow},
             f"the one clearly positive theme: {best.get('llm_label')} "
             f"at {best['sentiment']['polarity']:+.2f}",
         )
 
     add(
-        layers.statement_layers(
-            "every quote links to the original comment",
-            args.subject, out_dir / "l07", eyebrow="check the work",
-        ),
-        "closer",
+        {"kind": "statement",
+         "text": "every quote links to the original comment",
+         "eyebrow": "check the work"},
         "the sources are published; the viewer can check every number",
     )
 
     # ── narration ───────────────────────────────────────────
-    narration: list[Path | None] = [None] * len(built)
-    lines: list[str] = [""] * len(built)
+    narration: list[Path | None] = [None] * len(cards)
+    lines: list[str] = [""] * len(cards)
 
     try:
         client = LLMClient(settings.require_llm())
@@ -263,27 +278,28 @@ def main() -> int:
         max(audio_duration(vo) + 0.6, 3.0) if vo else 4.0
         for vo in narration
     ]
-    # Charts need longer than a quote card: bars grow, then the numbers
+    # Charts need longer than a statement: the bars grow, the counts
     # arrive, then the viewer needs a moment to read them.
     for i, card in enumerate(described):
         if card["kind"] in {"bars", "composition"}:
-            holds[i] = max(holds[i], 5.0)
-
-    shots = [
-        LayeredShot(card=c, hold=h, kind=d["kind"], audio=vo)
-        for c, h, d, vo in zip(built, holds, described, narration)
-    ]
+            holds[i] = max(holds[i], 5.5)
 
     video = out_dir / "short.mp4"
     music = args.music if args.music and args.music.exists() else None
-    print(f"\n{BOLD}Rendering{RESET}")
+    print(f"\n{BOLD}Rendering{RESET} {DIM}Remotion{RESET}")
     try:
-        _, total = build_layered_short(
-            shots, video, music=music,
-            music_gain_db=args.music_gain, crossfade=args.crossfade,
+        spec = rmt.ShortSpec(
+            shots=[
+                rmt.Shot(card=c, hold=h, audio=vo)
+                for c, h, vo in zip(cards, holds, narration)
+            ],
+            music=music,
+            music_gain_db=args.music_gain,
+            crossfade=args.crossfade,
         )
+        _, total = rmt.render(spec, video)
         print(f"  {GREEN}{video.name}{RESET} {DIM}{total:.1f}s{RESET}")
-    except MotionError as exc:
+    except rmt.RemotionError as exc:
         print(f"  {RED}{exc}{RESET}\n")
         return 1
 
