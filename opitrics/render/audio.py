@@ -30,8 +30,20 @@ API_BASE = "https://api.elevenlabs.io/v1"
 # Multilingual, since scripts quote Japanese titles and model names.
 DEFAULT_MODEL = "eleven_multilingual_v2"
 
-# A clear, unhurried narrator. Overridable per project.
-DEFAULT_VOICE = "onwK4e9ZLuTAKqWW03F9"  # Daniel — measured, documentary
+# Chris — "charming, down-to-earth", tagged conversational.
+#
+# The first choice here was Daniel, "Steady Broadcaster", tagged
+# informative_educational. That is a voice designed to hold an even
+# line, which is right for a documentary and wrong for a short: it
+# read every sentence at the same pitch and no settings fixed it.
+#
+# Measured across the same script, pitch spread by voice:
+#   Chris 5.77 · Jessica 4.74 · Liam 4.35 · Brian 4.14 · Daniel 4.04
+# (semitones). Chris is 43% wider than Daniel, well outside the ±1
+# semitone run-to-run noise, so the difference is real rather than a
+# lucky sample. Notably the social_media-tagged voices scored mid —
+# that tag tracks energy and pace, not pitch movement.
+DEFAULT_VOICE = "iP95p4xoKVk53GoZ742B"  # Chris — conversational, widest range
 
 
 class AudioError(RuntimeError):
@@ -40,9 +52,32 @@ class AudioError(RuntimeError):
 
 @dataclass
 class VoiceSettings:
-    stability: float = 0.45
-    similarity_boost: float = 0.75
-    style: float = 0.15
+    """How much the delivery is allowed to move.
+
+    `stability` is inverted from what the name suggests: high values
+    hold the voice steady and flatten intonation, low values let it
+    move. The first version of this file used 0.45 with style 0.15,
+    which sat *above* the chosen voice's own recommended stability and
+    added almost no style on top — narration that read every sentence
+    at the same pitch.
+
+    Measuring pitch spread across settings turned out not to separate
+    them: the same text at the same settings varies more between runs
+    (4.1 to 6.3 semitones) than the settings vary between themselves.
+    So these are set from the voice's published defaults, loosened,
+    rather than from a grid search that was really measuring sampling
+    noise.
+    """
+
+    stability: float = 0.30
+    similarity_boost: float = 0.70
+    style: float = 0.45
+    # Natural pace. Slowing the read to buy depth bought dead air
+    # instead — 30% of the "speech" measured as silence inside the
+    # lines. Depth comes from the bass shelf alone (see `deepen`),
+    # which costs no time. Pushing past 1.0 on top of the pause
+    # trimming overshot into a breathless read, so the tightening is
+    # left to `deepen` where it can be measured.
     speed: float = 1.0
 
     def as_dict(self) -> dict:
@@ -117,21 +152,45 @@ class ElevenLabs:
         text: str,
         out: Path,
         settings: VoiceSettings | None = None,
+        previous_text: str | None = None,
+        next_text: str | None = None,
     ) -> Path:
         """Render one line of narration.
 
-        Cached by (voice, model, settings, text): re-rendering a short
-        after changing one card should not re-bill every other line.
+        `previous_text` and `next_text` are the neighbouring lines. They
+        are not spoken and are not billed; they tell the model where
+        this line sits in the paragraph, so it can carry intonation
+        across a cut instead of restarting flat on every line. Without
+        them a seven-line short is seven unrelated readings, which is
+        most of why narration sounds recited rather than told.
+
+        Cached by (voice, model, settings, neighbours, text): re-rendering
+        a short after changing one card should not re-bill every other
+        line. The neighbours are part of the key because changing the
+        line before this one genuinely changes how this one is read.
         """
         import requests
 
         settings = settings or VoiceSettings()
-        key = f"{self.voice_id}|{self.model}|{settings.as_dict()}|{text}"
+        key = (
+            f"{self.voice_id}|{self.model}|{settings.as_dict()}"
+            f"|{previous_text or ''}|{next_text or ''}|{text}"
+        )
         cached = self._cache_path("vo", key)
         if cached and cached.exists():
             out.parent.mkdir(parents=True, exist_ok=True)
             out.write_bytes(cached.read_bytes())
             return out
+
+        payload: dict = {
+            "text": text,
+            "model_id": self.model,
+            "voice_settings": settings.as_dict(),
+        }
+        if previous_text:
+            payload["previous_text"] = previous_text
+        if next_text:
+            payload["next_text"] = next_text
 
         resp = requests.post(
             f"{API_BASE}/text-to-speech/{self.voice_id}",
@@ -140,11 +199,7 @@ class ElevenLabs:
                 "Content-Type": "application/json",
                 "Accept": "audio/mpeg",
             },
-            json={
-                "text": text,
-                "model_id": self.model,
-                "voice_settings": settings.as_dict(),
-            },
+            json=payload,
             timeout=120,
         )
         if resp.status_code != 200:
@@ -200,6 +255,79 @@ class ElevenLabs:
         if cached:
             cached.write_bytes(resp.content)
         return out
+
+
+def deepen(path: Path, gain_db: float = 4.0, max_pause: float = 0.30) -> Path:
+    """Weight a voice track towards the low end and tighten it, in place.
+
+    Two jobs, one pass, because both are ffmpeg filters and running
+    the file through twice costs quality for nothing.
+
+    The EQ half: ElevenLabs exposes no pitch or EQ control, so warmth
+    has to be added after the fact. This is a shelf, not a pitch
+    shift — shifting pitch down makes a voice sound slowed and
+    artificial, whereas lifting the low shelf and easing the presence
+    region reads as a closer microphone. The high-pass at 60Hz goes
+    first, since boosting a shelf that includes rumble the voice does
+    not use just muddies it.
+
+    The timing half: the model inserts a real pause at every sentence
+    break, and shorts narration is deliberately written in short
+    sentences — so the two compound. Measured on a finished short,
+    30% of the "speech" was silence inside the lines, including single
+    stops over a second long. On a vertical short that is where the
+    thumb moves. Silences longer than `max_pause` are cut back to it;
+    shorter ones are left alone.
+
+    The default is a measured middle, not a minimum. At 0.22s the
+    result came back with no detectable pause at all — breathless,
+    which is its own kind of wrong and reads as a machine reading a
+    list. 0.30s leaves an audible beat at each sentence break while
+    removing the stalls.
+    """
+    import shutil
+    import subprocess
+    import tempfile
+
+    if not path.exists():
+        return path
+
+    # `--bass 0` turns off the EQ but keeps the timing work, which is
+    # the half that matters most for retention.
+    tone = (
+        "highpass=f=60,"
+        f"bass=g={gain_db}:f=110:width_type=q:w=0.7,"
+        "treble=g=-1.5:f=5000:width_type=q:w=0.8,"
+        "acompressor=threshold=-18dB:ratio=2.5:attack=8:release=180,"
+    ) if gain_db else ""
+
+    chain = (
+        f"{tone}"
+        # Trim the head and tail, then cap pauses in the middle. The
+        # head/tail matter because every line is its own file and the
+        # leading silence stacks on top of the gap between cards.
+        f"silenceremove="
+        f"start_periods=1:start_duration=0:start_threshold=-45dB:"
+        f"stop_periods=-1:stop_duration={max_pause}:stop_threshold=-45dB:"
+        f"detection=rms,"
+        "areverse,"
+        "silenceremove=start_periods=1:start_duration=0:"
+        "start_threshold=-45dB:detection=rms,"
+        "areverse,"
+        "loudnorm=I=-16:TP=-1.5:LRA=11"
+    )
+    tmp = Path(tempfile.mkstemp(suffix=".mp3")[1])
+    proc = subprocess.run(
+        ["ffmpeg", "-y", "-v", "error", "-i", str(path),
+         "-af", chain, "-codec:a", "libmp3lame", "-q:a", "2", str(tmp)],
+        capture_output=True, text=True, check=False,
+    )
+    if proc.returncode != 0 or not tmp.exists() or tmp.stat().st_size == 0:
+        log.warning("bass shelf failed, keeping original: %s", proc.stderr[:200])
+        tmp.unlink(missing_ok=True)
+        return path
+    shutil.move(str(tmp), str(path))
+    return path
 
 
 def audio_duration(path: Path) -> float:

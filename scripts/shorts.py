@@ -16,6 +16,8 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import re
+import subprocess
 import sys
 from pathlib import Path
 
@@ -27,9 +29,15 @@ from opitrics.ingest.db import Database  # noqa: E402
 from opitrics.render import remotion as rmt  # noqa: E402
 from opitrics.render import sequence  # noqa: E402
 from opitrics.render.angles import ANGLES, ShortAngle  # noqa: E402
-from opitrics.render.audio import AudioError, ElevenLabs, audio_duration  # noqa: E402
+from opitrics.render.audio import (  # noqa: E402
+    AudioError,
+    ElevenLabs,
+    audio_duration,
+    deepen,
+)
 
 logging.basicConfig(level=logging.INFO, format="%(message)s")
+log = logging.getLogger(__name__)
 
 BOLD = "\033[1m"
 DIM = "\033[2m"
@@ -53,8 +61,29 @@ the data, said plainly enough to stop a thumb.
   Strong: "They're not arguing about the car. They're arguing about China."
 
 Rules:
-- SPOKEN, not written. Short sentences, 8 to 16 words. Contractions.
-  Read each line aloud; if you stumble, rewrite it.
+- SPOKEN, not written. Contractions. Read each line aloud; if you
+  stumble, rewrite it.
+- VARY THE SENTENCE LENGTH. This is what makes narration sound like a
+  person telling you something rather than a person reading. A line of
+  even, equal-length sentences is delivered flat no matter how it is
+  voiced, because there is nothing in it to rise or fall against.
+  Put a two-word sentence next to a fifteen-word one. Use a question
+  where a question is real. Break a sentence off where a speaker would.
+
+    Flat:   "Nearly a quarter of these comments are not about the car.
+             They are about the brand and where it comes from."
+    Spoken: "A quarter of them aren't about the car at all. Not one
+             word. They're arguing about China."
+
+  Aim for a mix across the script: some lines 4 to 8 words, some 15 to
+  20. Never write every line the same length.
+- Vary length ACROSS lines, not by chopping one line into fragments.
+  Every full stop becomes an audible pause when this is voiced, so a
+  line built from four two-word sentences is four dead stops in six
+  seconds, and the viewer scrolls during them. Within a single line,
+  prefer a comma or a dash to a full stop, and use at most one full
+  stop mid-line. Keep the fragments for where they land hardest — the
+  opening line and the closing one.
 - Never describe the screen. The viewer can see the chart or the quote.
   Say what it means, or why it is surprising.
 - Numbers as a person says them: "sixteen thousand comments".
@@ -67,6 +96,24 @@ Rules:
   another, and it lands as a mistake. Quote only on cards whose `kind`
   is "quote", and say what the quote MEANS rather than reading it
   aloud, since the card already shows the words.
+
+NEVER INVENT A QUOTE. Do not write words inside quotation marks and
+attribute them to a commenter unless those exact words appear in the
+card you were given. Not a paraphrase, not a tightened version, not
+something truer to what they meant. A short that puts invented words
+in a real person's mouth is the one failure that cannot be corrected
+after publishing.
+
+If a quote card is in the sequence, the viewer is already reading the
+comment on screen. Your line says what it MEANS, or why it matters, or
+who is saying it — never the words themselves:
+
+  Forbidden: One guy says "the real range is half what they claim."
+  Correct:   This one did the maths himself. Thirty-six people agreed.
+
+Every figure you use must come from the card descriptions or the
+ground-truth facts. Do not attach a number from one theme to a
+different theme, and do not name a theme the data did not give you.
 
 The hard limit: every line must survive a viewer opening the sources
 page and checking it. Provocative framing of a true finding is the job.
@@ -87,8 +134,20 @@ def write_narration(
     cards: list[dict],
     display: str,
     facts: dict,
+    rejected: list[tuple[int, str]] | None = None,
 ) -> list[str]:
     """One spoken line per card, written against the actual sequence."""
+    correction = ""
+    if rejected:
+        listed = "\n".join(f'  line {i}: "{claim}"' for i, claim in rejected)
+        correction = (
+            "\n\nYour previous attempt was REJECTED. These quoted phrases "
+            "appear nowhere in the corpus — you invented them:\n"
+            + listed
+            + "\n\nRewrite every line. Do not put words in quotation marks "
+            "and attribute them to a commenter. Describe what the comment "
+            "means and how many people agreed instead.\n"
+        )
     instruction = (
         f"Write narration for this {len(cards)}-card short about the "
         f"{display}.\n\n"
@@ -99,6 +158,7 @@ def write_narration(
         "with the same force you would without it. A cautious, clipped "
         "script fails as badly as an inaccurate one:\n"
         + json.dumps(facts, ensure_ascii=False, indent=2)
+        + correction
         + "\n\n"
         '{"lines":[{"index":<int>,"narration":"..."}]}\n\n'
         + json.dumps({"cards": cards}, ensure_ascii=False)
@@ -114,6 +174,141 @@ def write_narration(
         except (KeyError, ValueError, TypeError):
             continue
     return lines
+
+
+# Double quotes and matched single quotes only. A bare apostrophe is
+# not a delimiter: the first version of this treated ' as one, sliced
+# every contraction in half ("He's got" → "s got"), failed to find the
+# fragment in the corpus, and rejected two perfectly honest scripts.
+QUOTED = re.compile(
+    r'"([^"]{18,})"'
+    r"|“([^”]{18,})”"
+    r"|(?<![A-Za-z])'([^']{18,})'(?![A-Za-z])"
+    r"|(?<![A-Za-z])‘([^’]{18,})’(?![A-Za-z])"
+)
+
+
+def _normalise(text: str) -> str:
+    return re.sub(r"[^a-z0-9 ]+", " ", text.lower())
+
+
+def check_quotes(lines: list[str], analysis: dict) -> list[tuple[int, str]]:
+    """Find narration that quotes words no commenter actually wrote.
+
+    The prompt forbids inventing quotes, and the prompt was not enough:
+    asking for livelier writing produced fluent, plausible, entirely
+    fabricated comments — "I drove 200 km and the battery dropped 60%"
+    from a corpus containing no such sentence. A rule the model can
+    silently break needs a check that does not depend on the model.
+
+    Anything the narration presents in quotation marks is matched
+    against the stored corpus. Matching is on a run of consecutive
+    words rather than the whole string, since narration legitimately
+    trims a long comment; but the words it does use have to be the
+    commenter's own.
+    """
+    corpus = " ".join(
+        _normalise(q.get("text", "") + " " + q.get("english", ""))
+        for cluster in analysis["clusters"]
+        for q in cluster.get("quotes", [])
+    )
+    bad: list[tuple[int, str]] = []
+    for i, line in enumerate(lines, 1):
+        for groups in QUOTED.findall(line or ""):
+            claim = next((g for g in groups if g), "")
+            words = _normalise(claim).split()
+            if len(words) < 4:
+                continue
+            span = min(6, len(words))
+            if not any(
+                " ".join(words[j:j + span]) in corpus
+                for j in range(len(words) - span + 1)
+            ):
+                bad.append((i, claim.strip()))
+    return bad
+
+
+def _rank_wide(paths: list[Path]) -> list[Path]:
+    """Order photographs by how likely each is to show the whole car.
+
+    The first version of this took whichever image the rotation had
+    left over, and on this corpus that was a close crop of a door
+    handle — held behind every card for twenty-five seconds,
+    unrecognisable as a vehicle. A backdrop only works if the shape
+    reads at a glance.
+
+    Landscape framing is the signal available without recognising
+    anything: a photographer shooting a whole car steps back and the
+    frame goes wide, while detail shots trend square. Ties break
+    towards the larger file, which is the more detailed original.
+
+    Returns the full ranking rather than a winner so callers can take
+    different slots — picking the single best gave every angle the
+    same backdrop.
+    """
+    scored: list[tuple[float, int, Path]] = []
+    for path in paths:
+        try:
+            proc = subprocess.run(
+                ["ffprobe", "-v", "error", "-select_streams", "v:0",
+                 "-show_entries", "stream=width,height",
+                 "-of", "csv=p=0:s=x", str(path)],
+                capture_output=True, text=True, check=False, timeout=20,
+            )
+            w, h = (int(v) for v in proc.stdout.strip().split("x")[:2])
+        except (ValueError, OSError, subprocess.SubprocessError):
+            continue
+        if h:
+            scored.append((w / h, path.stat().st_size, path))
+    scored.sort(key=lambda s: (-s[0], -s[1]))
+    return [p for _, _, p in scored] or list(paths)
+
+
+def _fit(
+    holds: list[float],
+    lowest: float,
+    highest: float,
+    crossfade: float,
+) -> list[float]:
+    """Trim card holds so the short does not overrun its window.
+
+    This used to stretch short videos up to a floor as well, which was
+    a mistake: padding to reach a target length means adding silence,
+    and silence on a vertical short is where the viewer leaves. A
+    35-second video that holds attention beats a 40-second one that
+    earned five of those seconds by waiting.
+
+    So the floor is advisory — reported, never padded to. If the
+    narration only fills 31 seconds, the short is 31 seconds.
+
+    Trimming is bounded: a hold may never fall below its own
+    voiceover, since a card that cuts before its line finishes is a
+    worse fault than a long video. If the narration alone overruns the
+    ceiling, the ceiling loses.
+    """
+    if not holds:
+        return holds
+
+    # What render() actually produces: each crossfade overlaps two cards.
+    overlap = crossfade * max(len(holds) - 1, 0)
+    total = sum(holds) - overlap
+
+    if total > highest:
+        # Matches the 0.25s tail added above: anything more would trim
+        # into the line itself.
+        floors = [max(h - 0.25, 2.0) for h in holds]
+        room = sum(holds) - sum(floors)
+        excess = total - highest
+        if room <= 0:
+            return holds
+        take = min(excess, room)
+        return [h - (h - f) * (take / room) for h, f in zip(holds, floors)]
+
+    if total < lowest:
+        log.info("short runs %.1fs, under the %.0fs target — "
+                 "not padding, silence costs more than length gains",
+                 total, lowest)
+    return holds
 
 
 def load_photos(subject: str) -> list[tuple[Path, str]]:
@@ -180,6 +375,24 @@ def build_angle(
     if client:
         try:
             lines = write_narration(client, angle, built.described, display, facts)
+            invented = check_quotes(lines, analysis)
+            if invented:
+                # One retry with the failure quoted back. If the model
+                # invents again the short does not get made: a fake
+                # quote is worse than a missing video.
+                print(f"  {YELLOW}invented quote(s) — rewriting:{RESET}")
+                for i, claim in invented:
+                    print(f"    {RED}line {i}: {claim[:70]}{RESET}")
+                lines = write_narration(
+                    client, angle, built.described, display, facts,
+                    rejected=invented,
+                )
+                invented = check_quotes(lines, analysis)
+                if invented:
+                    print(f"  {RED}still inventing quotes — skipped{RESET}")
+                    for i, claim in invented:
+                        print(f"    line {i}: {claim[:70]}")
+                    return False
             for i, line in enumerate(lines, 1):
                 print(f"  {BOLD}{i}{RESET} {line}")
         except Exception as exc:  # noqa: BLE001 - render silent rather than fail
@@ -192,24 +405,63 @@ def build_angle(
                 continue
             vo = out_dir / f"vo-{i + 1:02d}.mp3"
             try:
-                eleven.speak(line, vo)
+                # Each line is generated on its own, so without the
+                # neighbours the voice restarts its prosody at every
+                # cut and the short sounds recited. These are context
+                # only — not spoken, not billed.
+                eleven.speak(
+                    line, vo,
+                    previous_text=lines[i - 1] if i else None,
+                    next_text=lines[i + 1] if i + 1 < len(lines) else None,
+                )
+                # Applied to the copy, never the cache, so a rebuild
+                # shelves raw audio once rather than compounding.
+                deepen(vo, gain_db=args.bass, max_pause=args.max_pause)
                 narration[i] = vo
             except AudioError as exc:
                 print(f"  {YELLOW}line {i + 1}: {exc}{RESET}")
 
+    # The tail here is small on purpose. A card that lingers after its
+    # line has finished is dead air, and dead air is where a scrolling
+    # viewer leaves. 0.25s reads as a beat; 0.6s read as a stall.
     holds = [
-        max(audio_duration(vo) + 0.6, 3.0) if vo else 3.6
+        max(audio_duration(vo) + 0.25, 2.2) if vo else 2.6
         for vo in narration
     ]
-    # Charts need longer: the bars grow, the counts arrive, then the
-    # viewer needs a moment to read them.
+    # Charts still need longer: the bars grow, the counts arrive, then
+    # the viewer needs a moment to read them. But only enough to
+    # animate — the narration usually covers it by itself.
     for i, card in enumerate(built.described):
         if card["kind"] in {"bars", "composition"}:
-            holds[i] = max(holds[i], 5.5)
+            holds[i] = max(holds[i], 4.2)
+
+    holds = _fit(holds, args.min_seconds, args.max_seconds, args.crossfade)
 
     video = out_dir / "short.mp4"
     music = args.music if args.music and args.music.exists() else None
     try:
+        # Prefer an image this short does not already use full-bleed:
+        # holding the same photograph behind the card that shows it
+        # makes the cut look like a rendering fault. The rotation is
+        # already per-angle, so the choice differs between shorts.
+        shown = {c.get("src") for c in built.cards if c.get("src")}
+        unused = [p for p, _ in ordered if str(p) not in shown]
+        # Widest-first, but then take this angle's slot in that order.
+        # Picking the single widest gave all five shorts the same
+        # backdrop, which undoes the per-angle rotation entirely — five
+        # videos of one car should not open on one identical frame.
+        ranked = _rank_wide(unused or [p for p, _ in ordered])
+        # Rotate only over the wider half. The full ranking runs down
+        # into detail crops, and a backdrop is cropped again by the
+        # frame — rotating across all eight handed the last angle an
+        # interior shot that read as an anonymous white panel. Better
+        # to repeat a good wide shot than to use a bad close one.
+        pool_size = max(1, (len(ranked) + 1) // 2)
+        backdrop = (
+            ranked[sorted(ANGLES).index(angle.key) % pool_size]
+            if ranked else None
+        )
+
         spec = rmt.ShortSpec(
             shots=[
                 rmt.Shot(card=c, hold=h, audio=vo)
@@ -218,6 +470,7 @@ def build_angle(
             music=music,
             music_gain_db=args.music_gain,
             crossfade=args.crossfade,
+            backdrop=backdrop,
         )
         _, total = rmt.render(spec, video)
         print(f"  {GREEN}{video.name}{RESET} {DIM}{total:.1f}s{RESET}")
@@ -265,7 +518,15 @@ def main() -> int:
     ap.add_argument("--all", action="store_true", help="build every angle")
     ap.add_argument("--music", type=Path)
     ap.add_argument("--music-gain", type=float, default=-22.0)
-    ap.add_argument("--crossfade", type=float, default=0.18)
+    ap.add_argument("--crossfade", type=float, default=0.12)
+    ap.add_argument("--max-pause", type=float, default=0.30,
+                    help="cap on silence inside a spoken line, seconds")
+    ap.add_argument("--min-seconds", type=float, default=35.0,
+                    help="stretch card holds to reach at least this")
+    ap.add_argument("--max-seconds", type=float, default=40.0,
+                    help="trim towards this, but never below the voiceover")
+    ap.add_argument("--bass", type=float, default=4.0,
+                    help="low-shelf gain in dB on the voice (0 disables)")
     ap.add_argument("--sources-url", default="")
     ap.add_argument("--no-audio", action="store_true")
     args = ap.parse_args()

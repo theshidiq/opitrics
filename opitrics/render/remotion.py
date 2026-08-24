@@ -74,6 +74,10 @@ class ShortSpec:
     music: Path | None = None
     music_gain_db: float = -22.0
     crossfade: float = 0.18
+    # Held behind every card. Without it, any short whose shape has no
+    # "photo" slot never shows the product at all — a quote-led angle
+    # was twenty-six seconds of text on a blank page.
+    backdrop: Path | None = None
 
 
 def _stage_assets(spec: ShortSpec) -> dict[Path, str]:
@@ -107,6 +111,8 @@ def _stage_assets(spec: ShortSpec) -> dict[Path, str]:
 
     if spec.music:
         stage(spec.music, "music", 0)
+    if spec.backdrop:
+        stage(spec.backdrop, "bg", 0)
 
     return mapping
 
@@ -127,6 +133,7 @@ def render(spec: ShortSpec, out: Path, concurrency: int | None = None) -> tuple[
         "music": staged.get(spec.music) if spec.music else None,
         "musicGainDb": spec.music_gain_db,
         "crossfade": spec.crossfade,
+        "backdrop": staged.get(spec.backdrop) if spec.backdrop else None,
     }
 
     props_file = ROOT / "props.json"

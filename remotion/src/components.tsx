@@ -38,10 +38,11 @@ const Chrome: React.FC<{ eyebrow: string; footer?: string }> = ({
         left: MARGIN_PX,
         right: MARGIN_PX,
         fontFamily: MONO_STACK,
-        fontSize: 22,
-        letterSpacing: 6,
+        fontSize: 26,
+        fontWeight: 600,
+        letterSpacing: 5,
         textTransform: "uppercase",
-        color: UI.dim,
+        color: UI.meta,
         display: "flex",
         justifyContent: "space-between",
       }}
@@ -55,7 +56,7 @@ const Chrome: React.FC<{ eyebrow: string; footer?: string }> = ({
         top: `${SAFE.top * 100}%`,
         left: MARGIN_PX,
         right: MARGIN_PX,
-        height: 2,
+        height: 3,
         background: UI.rule,
       }}
     />
@@ -65,7 +66,7 @@ const Chrome: React.FC<{ eyebrow: string; footer?: string }> = ({
         bottom: `${SAFE.bottom * 100}%`,
         left: MARGIN_PX,
         right: MARGIN_PX,
-        height: 2,
+        height: 3,
         background: UI.rule,
       }}
     />
@@ -75,10 +76,10 @@ const Chrome: React.FC<{ eyebrow: string; footer?: string }> = ({
         bottom: `${SAFE.bottom * 100 - 4}%`,
         left: MARGIN_PX,
         fontFamily: MONO_STACK,
-        fontSize: 20,
+        fontSize: 24,
         letterSpacing: 6,
         fontWeight: 700,
-        color: UI.meta,
+        color: UI.text,
       }}
     >
       OPITRICS
@@ -180,10 +181,13 @@ export const HookCard: React.FC<HookProps> = ({
         <Enter from="scale">
           <div
             style={{
-              fontSize: 210,
-              fontWeight: 700,
+              fontSize: 236,
+              fontWeight: 800,
               color: UI.accent,
               lineHeight: 1,
+              // Large display numerals need negative tracking or the
+              // gaps read as broken spacing at this size.
+              letterSpacing: -4,
               fontVariantNumeric: "tabular-nums",
             }}
           >
@@ -193,11 +197,13 @@ export const HookCard: React.FC<HookProps> = ({
         <Enter delay={14} style={{ marginTop: 36 }}>
           <div
             style={{
-              fontSize: 54,
+              fontSize: 62,
+              fontWeight: 600,
               color: UI.text,
               textAlign: "center",
-              maxWidth: 820,
-              lineHeight: 1.25,
+              maxWidth: 860,
+              lineHeight: 1.22,
+              letterSpacing: -0.6,
             }}
           >
             {caption}
@@ -207,10 +213,11 @@ export const HookCard: React.FC<HookProps> = ({
           <Enter delay={26} from="fade" style={{ marginTop: 28 }}>
             <div
               style={{
-                fontSize: 30,
+                fontSize: 34,
+                fontWeight: 500,
                 color: UI.dim,
                 textAlign: "center",
-                maxWidth: 780,
+                maxWidth: 820,
               }}
             >
               {detail}
@@ -238,7 +245,11 @@ export const QuoteCard: React.FC<QuoteProps> = ({
 }) => {
   // Size to length rather than a fixed scale — the browser wraps, so
   // this only has to pick a point size that fits five lines.
-  const size = original.length < 60 ? 52 : original.length < 120 ? 44 : 36;
+  // Larger across the board than the first pass. These are read on a
+  // phone held at arm's length, often outdoors, in the two seconds
+  // before a thumb moves — sizes that look generous on a monitor are
+  // merely adequate there.
+  const size = original.length < 60 ? 60 : original.length < 120 ? 50 : 42;
 
   return (
     <>
@@ -275,7 +286,9 @@ export const QuoteCard: React.FC<QuoteProps> = ({
                 borderRadius: 6,
               }}
             />
-            <div style={{ fontSize: 22, color: UI.dim }}>identity withheld</div>
+            <div style={{ fontSize: 26, color: UI.dim, fontWeight: 500 }}>
+              identity withheld
+            </div>
           </div>
         </Enter>
 
@@ -284,8 +297,10 @@ export const QuoteCard: React.FC<QuoteProps> = ({
             style={{
               fontSize: size,
               color: UI.text,
-              lineHeight: 1.45,
-              maxHeight: 5 * size * 1.45,
+              fontWeight: 500,
+              lineHeight: 1.38,
+              letterSpacing: -0.3,
+              maxHeight: 5 * size * 1.38,
               overflow: "hidden",
             }}
           >
@@ -297,7 +312,14 @@ export const QuoteCard: React.FC<QuoteProps> = ({
           // Late on purpose: a viewer who reads Japanese gets a beat
           // with the original before the English arrives.
           <Enter delay={26} style={{ marginTop: 26 }}>
-            <div style={{ fontSize: 30, color: UI.meta, lineHeight: 1.45 }}>
+            <div
+              style={{
+                fontSize: 36,
+                color: UI.meta,
+                fontWeight: 450,
+                lineHeight: 1.4,
+              }}
+            >
               {english}
             </div>
           </Enter>
@@ -338,7 +360,7 @@ export const StatementCard: React.FC<StatementProps> = ({ text, eyebrow }) => {
   // One word per layer, staggered. This is the thing the still-image
   // renderer could not do at all.
   const words = text.split(/\s+/);
-  const size = text.length < 60 ? 62 : text.length < 120 ? 52 : 42;
+  const size = text.length < 60 ? 72 : text.length < 120 ? 60 : 48;
 
   return (
     <>
@@ -359,7 +381,9 @@ export const StatementCard: React.FC<StatementProps> = ({ text, eyebrow }) => {
           style={{
             fontSize: size,
             color: UI.text,
-            lineHeight: 1.3,
+            fontWeight: 600,
+            letterSpacing: -0.8,
+            lineHeight: 1.26,
             display: "flex",
             flexWrap: "wrap",
             gap: `0 ${size * 0.26}px`,
@@ -407,7 +431,15 @@ export const BarsCard: React.FC<BarsProps> = ({ title, rows, eyebrow }) => {
         }}
       >
         <Enter from="fade">
-          <div style={{ fontSize: 46, color: UI.text, marginBottom: 52 }}>
+          <div
+            style={{
+              fontSize: 54,
+              fontWeight: 700,
+              color: UI.text,
+              letterSpacing: -0.5,
+              marginBottom: 52,
+            }}
+          >
             {title}
           </div>
         </Enter>
@@ -431,9 +463,10 @@ export const BarsCard: React.FC<BarsProps> = ({ title, rows, eyebrow }) => {
                 <div
                   style={{
                     width: 380,
-                    fontSize: 24,
-                    lineHeight: 1.2,
-                    color: UI.meta,
+                    fontSize: 30,
+                    fontWeight: 500,
+                    lineHeight: 1.18,
+                    color: UI.text,
                     textAlign: "right",
                     flex: "none",
                   }}
@@ -443,8 +476,8 @@ export const BarsCard: React.FC<BarsProps> = ({ title, rows, eyebrow }) => {
                 <div
                   style={{
                     flex: 1,
-                    height: 44,
-                    background: "#EFEFEF",
+                    height: 52,
+                    background: "#DCDCDC",
                     position: "relative",
                   }}
                 >
@@ -461,8 +494,9 @@ export const BarsCard: React.FC<BarsProps> = ({ title, rows, eyebrow }) => {
                   style={{
                     width: 110,
                     fontFamily: MONO_STACK,
-                    fontSize: 26,
-                    color: UI.meta,
+                    fontSize: 32,
+                    fontWeight: 600,
+                    color: UI.text,
                     opacity: interpolate(
                       frame - (28 + i * 5),
                       [0, 8],
@@ -516,7 +550,15 @@ export const CompositionCard: React.FC<CompositionProps> = ({
         }}
       >
         <Enter from="fade">
-          <div style={{ fontSize: 46, color: UI.text, marginBottom: 56 }}>
+          <div
+            style={{
+              fontSize: 54,
+              fontWeight: 700,
+              color: UI.text,
+              letterSpacing: -0.5,
+              marginBottom: 56,
+            }}
+          >
             {title}
           </div>
         </Enter>
@@ -544,9 +586,10 @@ export const CompositionCard: React.FC<CompositionProps> = ({
                 {pct > 10 ? (
                   <span
                     style={{
-                      fontSize: 44,
-                      fontWeight: 700,
+                      fontSize: 52,
+                      fontWeight: 800,
                       color: "#FFFFFF",
+                      letterSpacing: -1,
                       opacity: interpolate(grow, [0.6, 1], [0, 1], {
                         extrapolateLeft: "clamp",
                       }),
@@ -573,13 +616,21 @@ export const CompositionCard: React.FC<CompositionProps> = ({
                 paddingRight: 16,
               }}
             >
-              <div style={{ fontSize: 26, color: UI.meta, lineHeight: 1.3 }}>
+              <div
+                style={{
+                  fontSize: 32,
+                  fontWeight: 500,
+                  color: UI.text,
+                  lineHeight: 1.28,
+                }}
+              >
                 {seg.label}
               </div>
               <div
                 style={{
                   fontFamily: MONO_STACK,
-                  fontSize: 24,
+                  fontSize: 30,
+                  fontWeight: 600,
                   color: UI.dim,
                   marginTop: 8,
                 }}
@@ -661,10 +712,15 @@ export const PhotoCard: React.FC<PhotoProps> = ({ src, caption, credit }) => {
           <Enter delay={8}>
             <div
               style={{
-                fontSize: 56,
+                fontSize: 66,
                 color: "#FFFFFF",
-                lineHeight: 1.25,
-                fontWeight: 600,
+                lineHeight: 1.22,
+                fontWeight: 700,
+                letterSpacing: -0.8,
+                // The gradient below is strong, but a white roofline
+                // can still sit under white type; the shadow keeps the
+                // caption legible wherever the crop lands.
+                textShadow: "0 2px 24px rgba(0,0,0,0.55)",
               }}
             >
               {caption}
@@ -672,7 +728,16 @@ export const PhotoCard: React.FC<PhotoProps> = ({ src, caption, credit }) => {
           </Enter>
         ) : null}
         <Enter delay={20} from="fade" style={{ marginTop: 22 }}>
-          <div style={{ fontSize: 20, color: "#D8D8D8" }}>{credit}</div>
+          <div
+            style={{
+              fontSize: 24,
+              color: "#F0F0F0",
+              fontWeight: 500,
+              textShadow: "0 1px 12px rgba(0,0,0,0.7)",
+            }}
+          >
+            {credit}
+          </div>
         </Enter>
       </div>
     </>

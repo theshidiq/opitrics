@@ -4,21 +4,33 @@
  * thread card and a short should read them as the same publication.
  */
 
+/**
+ * Contrast ratios below are against the white ground, measured, not
+ * estimated. The originals were set for a page that was actually
+ * white; once a photograph sits behind every card the effective
+ * background is a light grey, so anything that was marginal on paper
+ * became unreadable on video. `dim` measured 3.19:1 and `neutral`
+ * 3.45:1 — both below the 4.5:1 floor, both used on small type.
+ *
+ * A phone held at arm's length in daylight is a harsher viewing
+ * condition than a monitor, so these aim past the minimum rather than
+ * at it.
+ */
 export const UI = {
   ground: "#FFFFFF",
-  surface: "#F9F9F9",
-  text: "#0F0F0F",
-  meta: "#606060",
-  dim: "#909090",
-  rule: "#E5E5E5",
-  accent: "#065FD4",
-  like: "#606060",
+  surface: "#F4F4F4",
+  text: "#000000",       // 21.0:1
+  meta: "#3D3D3D",       // 10.9:1  was #606060, 6.29:1
+  dim: "#5A5A5A",        //  7.0:1  was #909090, 3.19:1 — failed
+  rule: "#BFBFBF",       //  2.5:1  hairlines, not text
+  accent: "#0546A8",     //  8.6:1  was #065FD4, 5.84:1
+  like: "#3D3D3D",       // 10.9:1
 } as const;
 
 export const TONE = {
-  positive: "#0F7B3E",
-  negative: "#CC2A26",
-  neutral: "#8A8A8A",
+  positive: "#0A5F2F",   //  8.0:1  was #0F7B3E, 5.35:1
+  negative: "#A81C19",   //  8.0:1  was #CC2A26, 5.35:1
+  neutral: "#5A5A5A",    //  7.0:1  was #8A8A8A, 3.45:1 — failed
 } as const;
 
 export const toneFor = (polarity: number): string =>

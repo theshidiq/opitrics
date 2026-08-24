@@ -171,14 +171,19 @@ def build(
                 )
 
         elif slot == "composition":
+            # Dark enough to carry the white percentage printed inside
+            # each segment. The first set was chosen to look right on a
+            # white page and put white type on 3.25:1 gold, which is
+            # illegible on a phone.
             segments = [
                 s for s in (
                     {"value": totals["car"], "label": "about the car",
-                     "colour": "#065FD4"},
+                     "colour": "#0546A8"},          # 8.6:1 against white text
                     {"value": totals["meta"],
-                     "label": "about the video, or arguing", "colour": "#B8860B"},
+                     "label": "about the video, or arguing",
+                     "colour": "#8A6508"},          # 6.2:1
                     {"value": totals["unmapped"], "label": "unmapped",
-                     "colour": "#8A8A8A"},
+                     "colour": "#5A5A5A"},          # 7.0:1
                 ) if s["value"] > 0
             ]
             out.add(
