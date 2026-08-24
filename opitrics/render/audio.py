@@ -18,6 +18,11 @@ import os
 from dataclasses import dataclass
 from pathlib import Path
 
+# Importing config is what loads the .env. Reading os.getenv without it
+# works only when something else happened to import config first, which
+# made this module fail confusingly when used on its own.
+from opitrics import config as _config  # noqa: F401
+
 log = logging.getLogger(__name__)
 
 API_BASE = "https://api.elevenlabs.io/v1"
