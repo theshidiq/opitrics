@@ -117,6 +117,43 @@ def _stage_assets(spec: ShortSpec) -> dict[Path, str]:
     return mapping
 
 
+def _tag_colour(video: Path) -> None:
+    """Write bt709 primaries and transfer into the container.
+
+    Remotion sets the pixel format and the matrix but leaves primaries
+    and transfer characteristics unspecified. An unflagged file is a
+    guess at the far end, and every platform re-encodes on upload —
+    TikTok and Instagram most aggressively. A decoder that guesses
+    wrong shifts the whole picture, which on a page of near-black type
+    on near-white ground is exactly where it shows.
+
+    This is a remux, not a re-encode: the H.264 and AAC streams are
+    copied untouched and only the container tags change, so it costs a
+    second and loses nothing. A failure here is not worth failing the
+    render over — the video is still correct, merely less explicit —
+    so it logs and moves on.
+    """
+    import shutil
+    import tempfile
+
+    tmp = Path(tempfile.mkstemp(suffix=".mp4")[1])
+    proc = subprocess.run(
+        ["ffmpeg", "-y", "-v", "error", "-i", str(video),
+         "-c", "copy", "-movflags", "+faststart",
+         "-color_primaries", "bt709",
+         "-color_trc", "bt709",
+         "-colorspace", "bt709",
+         "-color_range", "tv",
+         str(tmp)],
+        capture_output=True, text=True, check=False,
+    )
+    if proc.returncode != 0 or not tmp.exists() or tmp.stat().st_size == 0:
+        log.warning("colour tagging skipped: %s", proc.stderr[:200])
+        tmp.unlink(missing_ok=True)
+        return
+    shutil.move(str(tmp), str(video))
+
+
 def render(spec: ShortSpec, out: Path, concurrency: int | None = None) -> tuple[Path, float]:
     """Render the short. Returns the output path and its duration."""
     if not available():
@@ -145,6 +182,19 @@ def render(spec: ShortSpec, out: Path, concurrency: int | None = None) -> tuple[
         "npx", "remotion", "render", ENTRY, COMPOSITION, str(out.resolve()),
         "--props", str(props_file),
         "--log", "error",
+        # Limited-range yuv420p with the colour flags written in.
+        #
+        # The default was yuvj420p — full-range, with primaries and
+        # transfer left unflagged. Every platform re-encodes on upload,
+        # and a decoder that assumes limited range on a full-range file
+        # crushes blacks and blows highlights. The careful contrast work
+        # would arrive at the viewer partly undone, and only on the
+        # platforms, which is the worst place to discover it.
+        #
+        # bt709 is what a 1080p H.264 file is assumed to be. Saying so
+        # explicitly costs nothing and removes the guess.
+        "--pixel-format", "yuv420p",
+        "--color-space", "bt709",
     ]
     if concurrency:
         cmd += ["--concurrency", str(concurrency)]
@@ -154,6 +204,8 @@ def render(spec: ShortSpec, out: Path, concurrency: int | None = None) -> tuple[
     if proc.returncode != 0:
         tail = (proc.stderr or proc.stdout).strip().splitlines()[-12:]
         raise RemotionError("render failed:\n  " + "\n  ".join(tail))
+
+    _tag_colour(out)
 
     # Duration is the sum of holds less the overlaps, matching the
     # layout the composition computes.
