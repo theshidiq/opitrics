@@ -47,30 +47,79 @@ RED = "\033[31m"
 RESET = "\033[0m"
 
 NARRATION_SYSTEM = """\
-You write narration for a 60-second vertical video that presents data \
-about how people talk about a car online.
+You write narration for vertical shorts about what people actually say
+online about a car. TikTok, Reels, YouTube Shorts.
 
-You are given the exact sequence of cards, in order, and what each one \
-shows. Write one spoken line per card.
+This audience is different from a reader on X. A reader on X already
+cared enough to click. A short-form viewer arrived by accident, is
+holding their thumb over the screen, and leaves in two seconds. Nothing
+is owed to you.
+
+So the first line is not a summary. It is the most contested thing in
+the data, said plainly enough to stop a thumb.
+
+  Weak:   "Nearly a quarter of the chatter isn't about the car."
+  Strong: "They're not arguing about the car. They're arguing about China."
+
+  Weak:   "Sentiment on build quality is negative."
+  Strong: "Mechanics looked underneath. They didn't like what they saw."
 
 Rules:
-- Written to be SPOKEN. Short sentences, 10 to 18 words. Read it aloud \
-in your head.
-- Never describe what is on screen. The viewer can see the chart. Say \
-what it MEANS, or what is surprising about it.
-- Numbers spoken as a person would say them.
-- The first line has two seconds to stop a scroll. Lead with the finding.
-- The last line must land something, not summarise.
-- No "as you can see", no "this chart shows", no "let's take a look".
+- SPOKEN, not written. Short sentences, 8 to 16 words. Contractions.
+  Read each line aloud; if you stumble, rewrite it.
+- Lead with the conflict the data actually shows. Every car has a
+  different one — a defect, a price, a rivalry, a nationality fight.
+  Find this car's and open on it.
+- Never describe the screen. The viewer can see the chart. Say what it
+  means or why it is surprising.
+- Numbers as a person says them: "sixteen thousand comments".
+- Build tension across the middle. A short is an argument, not a list.
+- End on something the viewer carries away. A question is fine. A
+  summary is not.
+- No "as you can see", no "this chart shows", no "let's take a look",
+  no "stay tuned", no "the results might surprise you".
+
+The hard limit: every line must survive a viewer opening the sources
+page and checking. Provocative framing of a true finding is the job.
+A claim the data does not support is not — it earns a correction in
+your own comments, which costs more than the view was worth.
+
+Specifically:
+- Do not call a sentiment score a verdict. "Most of the comments were
+  negative" is true; "the internet hated it" is not.
+- Do not present the loudest cluster as the majority unless it is.
+- Where a cluster is flagged for sarcasm, do not state its polarity as
+  fact.
+- Commenters are not buyers. Never imply sales, demand or ownership
+  from comment sentiment.
 
 Return JSON only."""
 
 
-def write_narration(client: LLMClient, cards: list[dict], display: str) -> list[str]:
-    """One spoken line per card, written against the actual sequence."""
+def write_narration(
+    client: LLMClient,
+    cards: list[dict],
+    display: str,
+    facts: dict | None = None,
+) -> list[str]:
+    """One spoken line per card, written against the actual sequence.
+
+    `facts` states the handful of figures a provocative opening is most
+    likely to overstate. Asking for sharper framing produced "most of
+    them aren't about the car" on a corpus that is 78% about the car —
+    the instruction not to overclaim was not enough on its own, so the
+    numbers travel with the request.
+    """
     instruction = (
         f"Write narration for this {len(cards)}-card sequence about the "
         f"{display}.\n\n"
+        "These figures are the ground truth. Do not contradict them. "
+        "This is a constraint on accuracy, NOT an instruction to hedge — "
+        "write with the same force you would without it, and keep every "
+        "line to the 8-16 word range with real rhythm. A cautious, "
+        "clipped script fails as badly as an inaccurate one:\n"
+        + json.dumps(facts or {}, ensure_ascii=False, indent=2)
+        + "\n\n"
         'Return {"lines":[{"index":<int>,"narration":"..."}]}\n\n'
         + json.dumps({"cards": cards}, ensure_ascii=False)
     )
@@ -245,7 +294,18 @@ def main() -> int:
     try:
         client = LLMClient(settings.require_llm())
         print(f"\n{BOLD}Writing narration{RESET}")
-        lines = write_narration(client, described, display)
+        facts = {
+            "comments_total": raw,
+            "share_about_the_car_pct": car_pct,
+            "share_not_about_the_car_pct": 100 - car_pct,
+            "note": (
+                f"{car_pct}% of clustered comments ARE about the car. "
+                "A majority is therefore about the car — saying otherwise "
+                "is false. The interesting figure is that "
+                f"{100 - car_pct}% is not."
+            ),
+        }
+        lines = write_narration(client, described, display, facts)
         for i, line in enumerate(lines, 1):
             print(f"  {BOLD}{i}{RESET} {line}")
     except Exception as exc:  # noqa: BLE001 - the video still renders silent

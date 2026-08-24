@@ -7,8 +7,10 @@
 
 import React from "react";
 import {
+  Img,
   interpolate,
   spring,
+  staticFile,
   useCurrentFrame,
   useVideoConfig,
 } from "remotion";
@@ -603,19 +605,34 @@ export const PhotoCard: React.FC<PhotoProps> = ({ src, caption, credit }) => {
   const frame = useCurrentFrame();
   // A slow push across the shot, so a still photograph is not a still
   // frame. Computed per frame rather than stepped.
-  const scale = interpolate(frame, [0, 150], [1.0, 1.09], {
+  //
+  // Starting slightly wide: a 3:2 press photograph cover-cropped to
+  // 9:16 loses most of the car, and the subject reads better with some
+  // of the frame around it than filling it edge to edge.
+  const scale = interpolate(frame, [0, 150], [1.0, 1.07], {
     extrapolateRight: "clamp",
   });
 
   return (
     <>
       <div style={{ position: "absolute", inset: 0, overflow: "hidden" }}>
-        <img
-          src={src}
+        {/*
+          Remotion's <Img> rather than a bare <img>: it waits for the
+          file to decode before the frame is captured, so a slow image
+          cannot render as a blank frame. staticFile() resolves the
+          public/ path to the hashed URL the dev server actually
+          serves — a plain filename silently 404s and leaves white.
+        */}
+        <Img
+          src={staticFile(src)}
           style={{
             width: "100%",
             height: "100%",
             objectFit: "cover",
+            // Bias the crop upward: cover-cropping a landscape photo to
+            // a tall frame centres on the middle of the car, which is
+            // usually a door. The body and face sit higher.
+            objectPosition: "center 38%",
             transform: `scale(${scale})`,
           }}
         />
@@ -636,7 +653,7 @@ export const PhotoCard: React.FC<PhotoProps> = ({ src, caption, credit }) => {
           position: "absolute",
           left: MARGIN_PX,
           right: MARGIN_PX,
-          bottom: `${SAFE.bottom * 100 - 6}%`,
+          bottom: `${SAFE.bottom * 100 + 2}%`,
           fontFamily: FONT_STACK,
         }}
       >

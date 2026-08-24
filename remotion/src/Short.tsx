@@ -9,6 +9,7 @@ import {
   Audio,
   Sequence,
   interpolate,
+  staticFile,
   useCurrentFrame,
   useVideoConfig,
 } from "remotion";
@@ -120,11 +121,11 @@ export const Short: React.FC<ShortProps> = ({
             fadeOut={shot.index === placed.length - 1 ? fadeFrames * 2 : fadeFrames}
           />
           {shot.audio ? (
-            <Audio src={shot.audio} />
+            <Audio src={staticFile(shot.audio)} />
           ) : null}
         </Sequence>
       ))}
-      {music ? <Audio src={music} volume={musicVolume} loop /> : null}
+      {music ? <Audio src={staticFile(music)} volume={musicVolume} loop /> : null}
     </AbsoluteFill>
   );
 };
