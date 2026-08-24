@@ -20,7 +20,11 @@ to say holds for four seconds.
 
 from __future__ import annotations
 
+import atexit
+import glob
 import logging
+import shutil
+import tempfile
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -32,6 +36,30 @@ FPS = 30
 
 class MotionError(RuntimeError):
     """Raised when the animated render cannot be produced."""
+
+
+def _sweep_caches() -> int:
+    """Delete the frame caches movis leaves behind.
+
+    Movis composites through a diskcache that it never removes — each
+    render leaves roughly a gigabyte in the system temp directory. Left
+    alone this fills the disk: thirty-five of them accumulated during
+    development before anyone noticed, holding 28GB.
+    """
+    freed = 0
+    for path in glob.glob(str(Path(tempfile.gettempdir()) / "diskcache-*")):
+        try:
+            shutil.rmtree(path, ignore_errors=True)
+            freed += 1
+        except OSError:
+            continue
+    if freed:
+        log.info("cleared %d leftover frame cache(s)", freed)
+    return freed
+
+
+# Also on exit, so an interrupted render does not leave one behind.
+atexit.register(_sweep_caches)
 
 
 @dataclass
@@ -248,7 +276,10 @@ def build_layered_short(
 
     out.parent.mkdir(parents=True, exist_ok=True)
     log.info("rendering %d layered shots, %.1fs…", len(shots), total)
-    scene.write_video(str(out), fps=FPS)
+    try:
+        scene.write_video(str(out), fps=FPS)
+    finally:
+        _sweep_caches()
     return out, total
 
 
@@ -326,5 +357,8 @@ def build_motion_short(
 
     out.parent.mkdir(parents=True, exist_ok=True)
     log.info("rendering %d shots, %.1fs…", len(shots), total)
-    scene.write_video(str(out), fps=FPS)
+    try:
+        scene.write_video(str(out), fps=FPS)
+    finally:
+        _sweep_caches()
     return out, total
