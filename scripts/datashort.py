@@ -174,6 +174,11 @@ def main() -> int:
             records = json.loads(manifest.read_text(encoding="utf-8"))
             photos = [(cache / r["file"], r["credit"]) for r in records
                       if (cache / r["file"]).exists()]
+            # Deterministic shuffle keyed on the subject: the same car
+            # always gets the same order, different cars get different
+            # ones, and re-running does not reshuffle mid-series.
+            import random as _random
+            _random.Random(args.subject).shuffle(photos)
             print(f"\n{DIM}{len(photos)} cached image(s){RESET}")
         else:
             print(f"\n{BOLD}Fetching imagery{RESET} {DIM}Wikimedia Commons{RESET}")
@@ -267,6 +272,15 @@ def main() -> int:
             {"kind": "photo", "src": str(photo),
              "caption": "so is it any good?", "credit": credit},
             "the car again, posing the question of whether the criticism is fair",
+        )
+
+    if len(photos) > 2:
+        photo, credit = photos[2]
+        add(
+            {"kind": "photo", "src": str(photo),
+             "caption": "the people who drove it disagreed",
+             "credit": credit},
+            "the car once more, turning from the criticism to the praise",
         )
 
     best = (max(car_clusters, key=lambda c: c["sentiment"]["polarity"])

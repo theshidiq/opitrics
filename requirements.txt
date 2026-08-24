@@ -4,6 +4,9 @@ pydantic>=2.6.0
 
 # ── YouTube ingest ──────────────────────────────────────────
 google-api-python-client>=2.120.0
+# Uploading acts on behalf of a channel, so it needs OAuth,
+# not the API key that comment fetching uses.
+google-auth-oauthlib>=1.2.0
 
 # ── Local NLP / ML (all run on-device) ──────────────────────
 torch>=2.2.0

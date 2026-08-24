@@ -201,11 +201,13 @@ def download(images: list[CommonsImage], out_dir: Path) -> list[CommonsImage]:
         if suffix not in {".jpg", ".jpeg", ".png", ".webp"}:
             continue
         target = out_dir / f"{i:02d}{suffix}"
-        for attempt in range(2):
+        for attempt in range(4):
             try:
                 resp = session.get(image.url, timeout=90)
                 if resp.status_code == 429:
-                    time.sleep(4)
+                    # Back off progressively rather than retrying at the
+                    # same rate that just failed.
+                    time.sleep(5 * (attempt + 1))
                     continue
                 resp.raise_for_status()
                 target.write_bytes(resp.content)
@@ -220,11 +222,12 @@ def download(images: list[CommonsImage], out_dir: Path) -> list[CommonsImage]:
         image.local = target
         kept.append(image)
 
-        # Wikimedia rate-limits bulk downloads and returns 429 after a
-        # handful of rapid requests. A short pause between files is
-        # cheaper than the retry logic the alternative needs.
+        # Wikimedia rate-limits bulk downloads hard. 1.2s between files
+        # still tripped a 429 after the third; measured, ~3s holds for a
+        # dozen. Slow, but this runs once per subject and the files are
+        # then cached.
         if i < len(images):
-            time.sleep(1.2)
+            time.sleep(3.0)
 
     # The manifest is the record that makes attribution possible later.
     (out_dir / "credits.json").write_text(
