@@ -37,6 +37,14 @@ REPO = "opitrics-sources"
 # Held outside the project so a `git status` here never shows it.
 CHECKOUT = Path.home() / ".opitrics" / REPO
 
+# The custom domain. GitHub Pages reads this from a CNAME file in the
+# repo root, and treats its absence as "no custom domain" — so it is
+# rewritten on every deploy rather than set once in the web UI. Delete
+# the file through the UI and the next deploy silently puts it back;
+# change the domain here and every published URL changes with it, which
+# is exactly why this is a constant and not a flag.
+DOMAIN = "opitrics.com"
+
 
 def run(args: list[str], cwd: Path | None = None) -> tuple[int, str]:
     proc = subprocess.run(
@@ -114,19 +122,22 @@ def index_page(entries: list[dict]) -> str:
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Opitrics — sources</title>
 <style>
-body{{background:#FBFAF7;color:#1A1917;margin:0;
+/* Same palette as the audit pages and remotion/src/theme.ts — see the
+   note on CSS in opitrics/render/provenance.py. */
+body{{background:#FFFFFF;color:#000000;margin:0;
  font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}}
 .wrap{{max-width:720px;margin:0 auto;padding:56px 24px 80px}}
 h1{{font-size:30px;margin:0 0 12px;letter-spacing:-.02em}}
-p{{color:#4A473F;max-width:62ch}}
-ul{{list-style:none;padding:0;margin:32px 0 0;border-top:1px solid #DBD7CC}}
-li{{padding:15px 0;border-bottom:1px solid #E8E5DC}}
-li a{{color:#8C2B18;font-weight:600;font-size:18px;text-decoration:none}}
+p{{color:#3D3D3D;max-width:62ch}}
+ul{{list-style:none;padding:0;margin:32px 0 0;border-top:1px solid #BFBFBF}}
+li{{padding:15px 0;border-bottom:1px solid #BFBFBF}}
+li:last-child{{border-bottom:none}}
+li a{{color:#0546A8;font-weight:600;font-size:18px;text-decoration:none}}
 li a:hover{{text-decoration:underline}}
-li span{{display:block;color:#807B6E;font-size:13px;
+li span{{display:block;color:#5A5A5A;font-size:13px;
  font-family:ui-monospace,monospace;margin-top:4px}}
-footer{{margin-top:48px;padding-top:20px;border-top:1px solid #DBD7CC;
- color:#807B6E;font-size:13.5px}}
+footer{{margin-top:48px;padding-top:20px;border-top:1px solid #BFBFBF;
+ color:#5A5A5A;font-size:13.5px}}
 </style></head><body><div class="wrap">
 <h1>Opitrics — sources</h1>
 <p>Every comment analysis published under this name has a page here listing
@@ -173,7 +184,7 @@ def main() -> int:
 
     if args.dry_run:
         for sp in ready:
-            print(f"  {DIM}{sp.subject} → https://{user}.github.io/{REPO}/{sp.subject}/{RESET}")
+            print(f"  {DIM}{sp.subject} → https://{DOMAIN}/{sp.subject}/{RESET}")
         print(f"\n{YELLOW}Dry run — nothing pushed.{RESET}\n")
         return 0
 
@@ -207,6 +218,7 @@ def main() -> int:
     (CHECKOUT / "index.html").write_text(index_page(entries), encoding="utf-8")
     # Skip Jekyll — it would try to process these as templates.
     (CHECKOUT / ".nojekyll").write_text("", encoding="utf-8")
+    (CHECKOUT / "CNAME").write_text(f"{DOMAIN}\n", encoding="utf-8")
 
     # ── commit and push ─────────────────────────────────────
     run(["git", "add", "-A"], cwd=CHECKOUT)
@@ -226,12 +238,12 @@ def main() -> int:
 
     print(f"\n{GREEN}{BOLD}Published{RESET}")
     for e in entries:
-        print(f"  https://{user}.github.io/{REPO}/{e['subject']}/")
+        print(f"  https://{DOMAIN}/{e['subject']}/")
     print(f"\n{DIM}Pages can take a minute to build on first publish.{RESET}")
     print(f"{DIM}Then rebuild threads with the URL:{RESET}")
     first = entries[0]
     print(f"  python scripts/thread.py --subject {first['subject']} --all \\")
-    print(f"    --sources-url https://{user}.github.io/{REPO}/{first['subject']}/\n")
+    print(f"    --sources-url https://{DOMAIN}/{first['subject']}/\n")
     return 0
 
 

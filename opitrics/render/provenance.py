@@ -120,8 +120,17 @@ def attach_sources(analysis: dict, index: dict[str, dict]) -> int:
 
 
 CSS = """
-:root{--bg:#FBFAF7;--card:#fff;--line:#DBD7CC;--soft:#E8E5DC;
-  --ink:#1A1917;--ink-2:#4A473F;--ink-3:#807B6E;--accent:#8C2B18;--ok:#2C6E49}
+/* Mirrors remotion/src/theme.ts. A viewer taps from a short straight to
+   this page; two palettes read as two publications, and the whole point
+   of the link is that it is the same one. The contrast ratios there were
+   measured, not estimated — carry the values, do not re-pick them by eye.
+   `--ink-3` in particular replaces a warm grey that ran near 3.5:1 on
+   small uppercase labels, the same failure theme.ts records for #909090. */
+/* --soft is a fill (code, tints); --hair is the lighter internal rule.
+   They were one warm token before, which on white made the internal
+   hairlines fainter than the warm original measured. */
+:root{--bg:#FFFFFF;--card:#FFFFFF;--line:#BFBFBF;--soft:#F4F4F4;--hair:#E0E0E0;
+  --ink:#000000;--ink-2:#3D3D3D;--ink-3:#5A5A5A;--accent:#0546A8;--ok:#0A5F2F}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);
   font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",
@@ -135,9 +144,15 @@ h1{font-size:31px;line-height:1.15;margin:0 0 12px;letter-spacing:-.018em}
 h2{font-size:14px;font-family:ui-monospace,monospace;letter-spacing:.13em;
   text-transform:uppercase;margin:44px 0 14px;padding-top:18px;
   border-top:1px solid var(--ink)}
+/* Hairlines come from the cells, not from a gap over a coloured
+   container. With auto-fit, a row that does not divide evenly leaves
+   empty tracks, and those tracks paint the container background as a
+   solid block — four stats over three columns on a phone. Bordering
+   each cell wraps cleanly at any count and any width. */
 .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));
-  gap:1px;background:var(--line);border:1px solid var(--line);margin:22px 0}
-.stat{background:var(--card);padding:15px 17px}
+  gap:0;margin:22px 0;border:1px solid var(--line);border-width:1px 0 0 1px}
+.stat{background:var(--card);padding:15px 17px;
+  border:1px solid var(--line);border-width:0 1px 1px 0}
 .stat b{display:block;font-size:23px;font-variant-numeric:tabular-nums;
   font-family:ui-monospace,monospace}
 .stat span{font-size:10.5px;font-family:ui-monospace,monospace;letter-spacing:.09em;
@@ -146,7 +161,7 @@ table{width:100%;border-collapse:collapse;font-size:14.5px}
 th{text-align:left;font-family:ui-monospace,monospace;font-size:10.5px;
   letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);
   font-weight:400;padding:0 12px 9px 0;border-bottom:1px solid var(--line)}
-td{padding:11px 12px 11px 0;border-bottom:1px solid var(--soft);
+td{padding:11px 12px 11px 0;border-bottom:1px solid var(--hair);
   color:var(--ink-2);vertical-align:top}
 td a{color:var(--accent)}
 .num{font-family:ui-monospace,monospace;text-align:right;font-variant-numeric:tabular-nums}
@@ -155,10 +170,10 @@ td a{color:var(--accent)}
 .q-text{font-size:16px;line-height:1.5;margin:0 0 10px}
 .q-meta{font-family:ui-monospace,monospace;font-size:11.5px;color:var(--ink-3);
   display:flex;gap:14px;flex-wrap:wrap;align-items:center;
-  border-top:1px solid var(--soft);padding-top:9px}
+  border-top:1px solid var(--hair);padding-top:9px}
 .q-meta a{color:var(--accent);text-decoration:none}
 .q-meta a:hover{text-decoration:underline}
-.note{border-left:2px solid var(--accent);background:#FCF3F1;padding:15px 19px;
+.note{border-left:2px solid var(--accent);background:#F1F5FB;padding:15px 19px;
   margin:22px 0;font-size:15px;color:var(--ink-2)}
 .note b{color:var(--ink)}
 .note.ok{border-left-color:var(--ok);background:#F0F7F2}
