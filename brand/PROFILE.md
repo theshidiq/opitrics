@@ -84,18 +84,39 @@ earns it in English does not exist there.
 
 ### Handle
 
-Primary, to hold on all four: **`opitrics`**
+Primary: **`opitrics`**
 
 Eight characters, clears every platform minimum and maximum, no
 separators or digits — it survives being read aloud and typed from
-memory. Verified free on YouTube (`@opitrics` → 404) as of
-2026-08-25; the other three are unverified.
+memory.
 
-Fallbacks: **`opitricslab`**, then **`readthecomments`** (15 chars,
-exactly at X's ceiling — check X first if you go there).
+| Platform  | Handle             | State |
+|-----------|--------------------|-------|
+| X         | `opitrics`         | held |
+| TikTok    | `opitrics`         | held |
+| YouTube   | `opitrics`         | free as of 2026-08-26, not yet claimed — Workspace accounts cannot use YouTube for 30 days from creation |
+| Instagram | `opinionmetrics`   | `opitrics` was taken |
 
-Register all four in one sitting, including the ones you will not post
-to for months.
+**Instagram breaks the set, and that is the right trade.** Matching all
+four would have meant taking a worse handle on the three platforms the
+shorts pipeline actually points at, to gain consistency on the one
+that matters least. Most people never see two of these profiles side
+by side.
+
+`opinionmetrics` is the better substitute because it is the derivation
+itself — someone seeing it beside the name gets the etymology free,
+where `opitricslab` or `readthecomments` would only have drifted.
+
+But the caveat above applies with more force there than anywhere: a
+handle reading `opinionmetrics` with nothing around it is a market
+research account, and market research implies buyers. On Instagram
+specifically, the display name must stay `Opitrics — opinion metrics`
+and the bio must keep `Not a review. Not a sales signal.` The handle is
+etymology only when something beside it is doing the explaining.
+
+Earlier fallbacks, kept for the record and for the Japanese arm:
+**`opitricslab`**, then **`readthecomments`** (15 chars, exactly at X's
+ceiling).
 
 ## Bios
 
