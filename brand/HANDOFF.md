@@ -77,13 +77,26 @@ entire differentiator. Render-layer change, so pipeline work to hand
 back, but it is a content problem and worth raising.
 
 **4. A Meta developer MCP is installed** (`meta_developer_tools`,
-`https://mcp.facebook.com/devtools`, official and verified). Connected
-and authenticated, but the session that set it up could not see its
-tools — it had started before the OAuth completed. A fresh session
-should have all 11. It reads docs, app config, App Review status and
-rate limits; useful for settling the App Review question above, but
-everything it reports is visible in the Meta dashboard. Convenience,
-not a dependency.
+`https://mcp.facebook.com/devtools`, official and verified), registered
+at project scope in `~/.claude.json`. `claude mcp list` reports it
+connected.
+
+**Its tools are reachable from the terminal CLI only, not the desktop
+app.** The OAuth was completed via `/mcp` in a terminal session and the
+token lives in that CLI's credential store; the desktop app does not
+read it and has no `/mcp` command to run the flow itself. An earlier
+note in this file predicted a fresh desktop session would pick the
+tools up — that was wrong, and two sessions wasted time on it. It is
+not stale state and not a dropped connection: the terminal is
+authenticated and the desktop app never was.
+
+Either run `claude` in a terminal for Meta MCP work, or skip it. It
+reads docs, app config, App Review status and rate limits — all of
+which are visible in the Meta dashboard. Convenience, not a dependency,
+and it does not touch the hosting problem that actually gates
+Instagram. The one useful question it would answer, whether App Review
+is needed to publish to your own account, is settled faster by adding
+yourself as a test user and trying it.
 
 ## How this session worked, since it differs from the briefs
 
