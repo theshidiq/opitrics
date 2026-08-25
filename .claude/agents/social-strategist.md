@@ -101,6 +101,16 @@ These exist because each one has already gone wrong here.
 
 6. **Don't call the loudest cluster the majority** unless it is.
 
+7. **Japanese output quotes only Japanese comments.** `check_quotes()`
+   matches against the original text and its English translation —
+   both fields, nothing else. A Japanese rendering of an English
+   comment is in neither, and the obvious "fix" is to add a field,
+   which makes the gate pass while it validates a translation nothing
+   checked. `translate.py` runs one direction only, into English.
+   Cross-language findings in Japanese content are stated as counts,
+   never as quotes: aggregates cross the language boundary safely,
+   attributed words never do.
+
 If a framing you like requires bending one of these, the framing loses.
 Say so plainly and offer the nearest honest version.
 

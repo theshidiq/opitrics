@@ -126,6 +126,18 @@ rather than CSS values — H.264 is what the viewer sees.
   a fake quote. Never route around this gate.
 - **Usernames are withheld** from every card. The permalink is what
   makes a quote checkable.
+- **Japanese-language output may only quote comments originally written
+  in Japanese.** `check_quotes()` works because its corpus is
+  `q["text"] + q["english"]` — every string that can legitimately reach
+  a card is in one of those two fields. A Japanese rendering of an
+  English comment is in neither, so it either fails the gate or, worse,
+  someone adds a `q["japanese"]` field to make it pass — at which point
+  the gate validates a translation nothing ever checked and reports
+  success. `translate.py` verifies one direction only, into English;
+  there is no outbound check and building one is a project, not a
+  patch. Cross-language findings in Japanese content are stated as
+  counts, never as quotes: an aggregate crosses the language boundary
+  safely, attributed words never do.
 - **Publishing stops for human review.** `scripts/publish.py` previews
   in a browser; `scripts/upload.py` defaults to private. Never post,
   upload, or make public without the user saying so for that specific

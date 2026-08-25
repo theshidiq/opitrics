@@ -107,6 +107,131 @@ Rules that don't bend:
 Sources, in full: github.com/theshidiq/opitrics-sources
 ```
 
+## The Japanese arm
+
+Not built yet, and deliberately not launched with the English one. The
+copy below is ready so the handles can be held and the identity is
+settled before the work starts.
+
+**It is a different publication, not a translation.** On the English
+side the user is partly blind — trusting the pipeline's translation
+checks, unable to fully judge whether a hook lands. On the Japanese
+side they read the raw comment, feel the register, and catch the
+sarcasm the model flagged as `nuance`. That asymmetry is large enough
+that the Japanese arm is plausibly the better product, and treating it
+as phase two of the English one would quietly shape it into a dub.
+
+In practice that means different subjects (Japanese-market cars with
+natively Japanese comment sections), a different angle set — `fight` is
+built around nationality arguments and paid-shill accusations, which is
+an English-language-YouTube pathology, and should be cut — and hooks
+built differently, because the flat confrontational opener that works
+in English short-form reads as crude rather than arresting in Japanese.
+
+**The biggest risk is a dub that passes every gate.** `check_quotes()`
+passes, `translate.py` is never invoked, no tofu, nothing wrong on any
+frame — and the video is lifeless. The failure is not factual, so the
+automated layer structurally cannot catch it; only retention would show
+it, after publication. The guard is not discipline, it is choosing a
+launch subject the English arm has never covered, so there is no
+original to translate from.
+
+### Handles
+
+Hold `opitrics_jp` and `opitricsjp` on all four now. The underscore
+breaks the read-aloud property that justified the primary handle, so
+`opitricsjp` is the more consistent choice — but hold both and decide
+later. Registering costs nothing; losing the name is unrecoverable.
+
+### Display name
+
+`Opitrics｜コメント欄を数える` — 18 characters, inside TikTok's and
+Instagram's 30. YouTube stays bare `Opitrics`.
+
+The full-width `｜` is deliberate; an ASCII pipe looks wrong beside
+Japanese.
+
+**The "opinion metrics" derivation is dropped in Japanese.** It earns
+its place in English because *opinion* (oh-PIN-yun) makes the
+pronunciation stick. That mechanism does not exist in Japanese, so the
+phrase would carry the market-research liability noted above with none
+of the benefit. `オピトリクス` in the About text fixes pronunciation
+directly if it needs fixing.
+
+### Bios
+
+Counts below are measured, not estimated — CJK counts double against
+most platform limits, and the first draft of the Instagram bio was over
+at 153 before trimming.
+
+**X** — 149 of 280 weighted units:
+
+```
+車1台につき数千件のコメントを、何が実際に議論されているかで分類します。すべての数字は、元のコメントへのリンク付き。販売実績を示すものではありません。
+```
+
+**TikTok** — 38 characters of 80:
+
+```
+コメント欄を、数える。すべての数字に、元のコメントへのリンクが付いています。
+```
+
+**Instagram** — 124 weighted of 150. Line breaks are load-bearing, as
+in English:
+
+```
+コメント欄を、数える。1台あたり数千件、複数の言語から。
+すべての数字は、元のコメントにリンク。
+レビューでも販売実績でもありません。
+```
+
+**YouTube channel description.** The fold falls earlier in Japanese —
+around 80 weighted units — so the differentiator completes sooner than
+the English version's 129 characters:
+
+```
+コメント欄を、分類する。1台あたり数千件、複数の言語から。すべての数字は元のコメントにリンクしています。
+
+これは何か：ある車の動画に付いたコメントを複数の言語で収集し、実際に議論されている内容ごとにグループ分けして、数えたものです。「このテーマは1,400件」と表示されているとき、その裏には必ずパーマリンクがあり、あなた自身がコメントを開いて確認できます。
+
+これは何ではないか：レビューでも、販売予測でも、市場の読みでもありません。車の動画にコメントする人は、その車を買った人ではありません。このチャンネルがそれを偽ることはありません。
+
+曲げないルール：
+— 引用は逐語のみ。言い換えたものを引用符に入れることはしません。
+— コメント投稿者の名前は伏せます。引用を検証可能にするのはパーマリンクであり、名前は、望んでもいない注目に個人をさらすだけです。
+— 最も声の大きいグループを「多数派」と呼ぶのは、実際に多数派であるときだけです。
+— 日本語のコンテンツで引用するのは、日本語で書かれたコメントだけです。
+
+ソース全文：github.com/theshidiq/opitrics-sources
+```
+
+The fourth rule is the Japanese-only-quotes rule, published. The
+English channel has no equivalent because English content has verified
+inbound translation; Japanese content has the restriction instead.
+Publishing a rule you actually keep is the cheapest credibility
+available, and it answers the obvious "why no English comments?"
+as rigour rather than as a gap.
+
+### Before the first Japanese short ships
+
+Editorial, and cheap enough to do now: read several Japanese-native
+corpora raw and confirm or falsify the claims above about angle fit
+before building on them; pick a launch subject; fix the angle set;
+rewrite the narration brief for Japanese hook construction rather than
+translating the English one.
+
+Pipeline, and handed back — none of it is this file's to do:
+`remotion/src/theme.ts` needs a simplified-CJK face mirroring
+`_cjk_font()` in `cards.py`; `strip_emoji` re-verified against a
+full-Japanese string; font cmap checked for every glyph on every card
+rather than quote bodies only; a Japanese ElevenLabs voice chosen by
+measurement the way `DEFAULT_VOICE` was; `check_quotes()` confirmed to
+work unmodified; and a rendered short inspected frame by frame.
+
+Those are the traps `CLAUDE.md` already documents. All-Japanese output
+takes each of them from latent to certain. A Japanese launch with tofu
+in a title is worse than no Japanese launch.
+
 ## About / pinned post
 
 Runs as the X pinned post, the TikTok and Instagram pinned comment, and
