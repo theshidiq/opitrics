@@ -138,14 +138,19 @@ li span{{display:block;color:#5A5A5A;font-size:13px;
  font-family:ui-monospace,monospace;margin-top:4px}}
 footer{{margin-top:48px;padding-top:20px;border-top:1px solid #BFBFBF;
  color:#5A5A5A;font-size:13.5px}}
+footer p{{color:inherit;margin:0 0 10px}}
+footer p:last-child{{margin-bottom:0}}
 </style></head><body><div class="wrap">
 <h1>Opitrics — sources</h1>
 <p>Every comment analysis published under this name has a page here listing
 the videos it read and every comment it quoted, each linking to the original
 on YouTube. Nothing asks to be believed; click a quote and check it.</p>
 <ul>{rows}</ul>
-<footer>Comment authors are not named. The permalink is what makes a quote
-checkable, so the handle is withheld.</footer>
+<footer><p>Comment authors are not named. The permalink is what makes a quote
+checkable, so the handle is withheld.</p>
+<p>Opitrics — opinion metrics. It reads what people say and counts it. It does
+not survey buyers or measure sales, and a comment section is not a sample of
+either.</p></footer>
 </div></body></html>"""
 
 

@@ -1,7 +1,9 @@
 # Opitrics
 
+*Opinion metrics.* Pronounced oh-PIT-rics.
+
 Reads YouTube comment sections about cars and turns them into analysis
-you can build content from.
+you can build content from — opinions in, measurements out.
 
 ```
 discover → fetch → cluster → analyse → report → thread

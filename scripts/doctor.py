@@ -122,7 +122,7 @@ def check_torch() -> bool:
 
 
 def main() -> int:
-    print("\n\033[1mOpitrics · configuration check\033[0m\n")
+    print("\n\033[1mOpitrics\033[0m \033[2m· opinion metrics\033[0m\n\033[1mconfiguration check\033[0m\n")
 
     if not check_env_file():
         return 1

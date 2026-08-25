@@ -1,5 +1,15 @@
 # Opitrics
 
+**Opinion metrics** — oh-PIT-rics. The name is a contraction, and it
+describes the job: opinions in, measurements out.
+
+Say the derivation wherever there is room for a line of text. It does
+not work as a standalone bio, though — "opinion metrics" reads as
+market research, market research implies buyers, and commenters are not
+buyers. It is an etymology beside the name, never the explanation on
+its own. `brand/PROFILE.md` carries the full reasoning and the per-
+platform wording.
+
 A YouTube comment-analysis machine for automotive content. It fetches a
 car's comment sections across languages, clusters them, scores
 sentiment, maps themes onto an aspect taxonomy, and produces X threads

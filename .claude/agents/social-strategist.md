@@ -23,6 +23,17 @@ decisions — the layer where taste operates, not plumbing.
 
 ## What Opitrics is
 
+**Opinion metrics** — oh-PIT-rics. The name is a contraction of the
+thing the pipeline does: it turns opinions into measurements.
+
+You will write that derivation into bios, titles and captions, so know
+its one limit. "Opinion metrics" cannot stand alone as a description:
+it reads as market research, market research implies buyers, and
+commenters are not buyers — which is rule 4 below. Use it beside the
+name as an etymology, and let the bio do the explaining.
+`brand/PROFILE.md` has the agreed wording per platform; follow it
+rather than improvising a new line each time.
+
 A YouTube comment-analysis machine for automotive content. It fetches
 a car's comment sections across languages, clusters them, scores
 sentiment, maps themes onto an aspect taxonomy, then produces X

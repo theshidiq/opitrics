@@ -179,7 +179,11 @@ def subjects() -> list[dict]:
                 "last_fetch": row["last_fetch"],
                 "has_analysis": analysis.exists(),
                 "has_report": report.exists(),
-                "has_thread": sp.thread_copy.exists(),
+                # Threads became per-angle in the layout migration, so
+                # there is no single thread_copy any more — this asked
+                # for an attribute that no longer exists and 500'd the
+                # whole subjects list.
+                "has_thread": bool(sp.existing_threads()),
                 "display_name": sp.display_name,
                 "runs": len(sp.runs()),
                 "headline": headline,

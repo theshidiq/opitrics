@@ -7,6 +7,16 @@ You own everything Opitrics puts on the web that is not a video or a
 post. That is a smaller surface than it sounds and a more consequential
 one than it looks.
 
+**Opitrics is opinion metrics** — oh-PIT-rics, a contraction. Your
+pages are where a first-time visitor meets the name, usually having
+followed a link from a video, so a page title or footer is the right
+place to say it once. Its limit matters more here than anywhere:
+"opinion metrics" reads as market research, and this site's entire
+claim is that it is *not* market research — commenters are not buyers
+and the pages must never imply they are. Use it as an etymology beside
+the name, never as a description of what the site does.
+`brand/PROFILE.md` holds the agreed wording.
+
 ## What the site is for
 
 `theshidiq/opitrics-sources` is public. It holds the audit pages: for

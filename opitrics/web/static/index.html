@@ -40,7 +40,13 @@ header.masthead{
   display:flex;align-items:flex-end;justify-content:space-between;gap:24px;flex-wrap:wrap;
 }
 .logo{font-size:40px;font-weight:700;letter-spacing:-.028em;line-height:1;margin:0}
+/* The accent falls on "trics" because the contraction is opinion +
+   metrics — the coloured half is the half that comes from "metrics". */
 .logo span{color:var(--accent)}
+.strapline{
+  font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--ink-3);margin:7px 0 0;
+}
 .masthead-meta{
   font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.1em;
   text-transform:uppercase;color:var(--ink-3);text-align:right;line-height:1.9;
@@ -239,7 +245,10 @@ ul.angles li{margin-bottom:9px;font-size:15.5px;line-height:1.5}
 
 <header class="masthead">
   <div class="masthead-inner">
-    <h1 class="logo">Opi<span>trics</span></h1>
+    <div>
+      <h1 class="logo">Opi<span>trics</span></h1>
+      <p class="strapline">opinion metrics</p>
+    </div>
     <div class="masthead-meta" id="mastMeta">—</div>
   </div>
 </header>
