@@ -32,6 +32,15 @@ LIGHT = {
     "ground": "#FBFAF7", "surface": "#F4F2EC", "line": "#DBD7CC",
     "accent": "#8C2B18", "pos": "#2C6E49", "neg": "#A3341F", "warn": "#9A6B1F",
 }
+# The published palette, mirroring remotion/src/theme.ts. LIGHT is the
+# internal web UI's warm theme and stays as it is; a chart on the public
+# report sits beside the shorts' own colours and has to match them, not
+# the review tooling. Ratios are theme.ts's measured ones.
+WEB = {
+    "ink": "#000000", "ink_mid": "#3D3D3D", "ink_soft": "#5A5A5A",
+    "ground": "#FFFFFF", "surface": "#F4F4F4", "line": "#BFBFBF",
+    "accent": "#0546A8", "pos": "#0A5F2F", "neg": "#A81C19", "warn": "#8A5A00",
+}
 
 # Module-level so the drawing functions can stay signature-compatible;
 # set by apply_theme() before any chart is rendered.
@@ -69,7 +78,7 @@ def _pick_font() -> str | None:
 def apply_theme(mode: str = "dark") -> None:
     global INK, INK_MID, INK_SOFT, GROUND, SURFACE, LINE, ACCENT, POS, NEG, WARN
 
-    palette = LIGHT if mode == "light" else DARK
+    palette = {"light": LIGHT, "web": WEB}.get(mode, DARK)
     INK = palette["ink"]
     INK_MID = palette["ink_mid"]
     INK_SOFT = palette["ink_soft"]

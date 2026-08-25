@@ -199,7 +199,19 @@ def main() -> int:
     for sp in ready:
         target = CHECKOUT / sp.subject
         target.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(sp.content_dir / "sources.html", target / "index.html")
+
+        # The report is the front door; the audit page sits behind it at
+        # a stable path. `<subject>/` has been published as the audit
+        # page, so it keeps resolving — the report link is what changes,
+        # and the audit page's own URL never moves again.
+        report = sp.content_dir / "report-public.html"
+        shutil.copy2(sp.content_dir / "sources.html", target / "sources.html")
+        if report.exists():
+            shutil.copy2(report, target / "index.html")
+        else:
+            # No report built: the audit page stays the landing page
+            # rather than leaving the subject with no index at all.
+            shutil.copy2(sp.content_dir / "sources.html", target / "index.html")
 
         analysis = {}
         if sp.analysis.exists():

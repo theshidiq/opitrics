@@ -22,6 +22,7 @@ from opitrics.ingest.db import Database  # noqa: E402
 from opitrics.render.provenance import (  # noqa: E402
     attach_sources,
     build_audit_page,
+    build_report_page,
     index_corpus,
 )
 
@@ -37,6 +38,11 @@ RESET = "\033[0m"
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--subject", required=True)
+    ap.add_argument(
+        "--sources-url",
+        default="",
+        help="public URL of the audit page, linked from the report",
+    )
     args = ap.parse_args()
 
     paths = settings.workspace.subject(args.subject).ensure()
@@ -87,8 +93,41 @@ def main() -> int:
     out = paths.content_dir / "sources.html"
     out.write_text(html, encoding="utf-8")
 
-    print(f"\n{GREEN}{BOLD}Audit page ready{RESET}  {out}")
-    print(f"{DIM}publish this with your threads — it is what makes the "
+    # The report is the front door; the audit page is the receipt behind
+    # it. Charts are rendered in the published palette, not the internal
+    # dark or warm ones — see WEB in opitrics/render/charts.py.
+    from opitrics.render import charts as charts_mod  # noqa: E402
+
+    chart_dir = paths.root / "charts"
+    chart_paths: dict = {}
+    try:
+        charts_mod.render_all(analysis, chart_dir, modes=["web"])
+        chart_paths = {
+            name: chart_dir / f"{name}.png"
+            for name in ("composition", "aspects", "volume-intensity")
+        }
+        missing = [n for n, p in chart_paths.items() if not p.exists()]
+        if missing:
+            print(f"  {YELLOW}charts missing:{RESET} {', '.join(missing)}")
+    except Exception as exc:  # a chart failure must not lose the report
+        print(f"  {YELLOW}charts skipped:{RESET} {exc}")
+
+    report_html = build_report_page(
+        subject=args.subject,
+        display_name=paths.display_name,
+        analysis=analysis,
+        videos=video_data,
+        meta={"raw": len(rows), "fetched_on": fetched},
+        charts=chart_paths,
+        sources_url=args.sources_url or "sources.html",
+    )
+    report_out = paths.content_dir / "report-public.html"
+    report_out.write_text(report_html, encoding="utf-8")
+
+    print(f"\n{GREEN}{BOLD}Pages ready{RESET}")
+    print(f"  report  {report_out}")
+    print(f"  sources {out}")
+    print(f"{DIM}publish these with your threads — they are what makes the "
           f"analysis checkable{RESET}\n")
     return 0
 

@@ -181,7 +181,290 @@ code{font-family:ui-monospace,monospace;font-size:13px;background:var(--soft);
   padding:1px 5px}
 footer{margin-top:56px;padding-top:22px;border-top:1px solid var(--line);
   color:var(--ink-3);font-size:13.5px}
+
+/* ── report ─────────────────────────────────────────────────
+   Charts are embedded as data URIs so a page is one file with no
+   second request that can 404. A wide chart scrolls inside its own
+   box rather than widening the page — the scatter is unreadable
+   below about 700px and squeezing it to fit helps nobody. */
+figure{margin:24px 0}
+figure .scroll{overflow-x:auto;border:1px solid var(--line)}
+figure img{display:block;width:100%;min-width:640px;height:auto}
+figure.wide img{min-width:860px}
+figcaption{font-size:13.5px;color:var(--ink-3);margin-top:9px;max-width:70ch}
+.finding{border-left:2px solid var(--accent);padding:2px 0 2px 17px;margin:26px 0}
+.finding h3{font-size:19px;margin:0 0 7px;letter-spacing:-.01em;line-height:1.25}
+.finding p{margin:0;color:var(--ink-2)}
+.group{margin:34px 0 0}
+.group>h3{font-size:12px;font-family:ui-monospace,monospace;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--ink-3);margin:0 0 12px;
+  padding-bottom:7px;border-bottom:1px solid var(--hair)}
+.theme{border:1px solid var(--line);padding:15px 17px;margin-bottom:11px}
+.theme-top{display:flex;justify-content:space-between;gap:14px;
+  align-items:baseline;flex-wrap:wrap}
+.theme h4{font-size:16.5px;margin:0 0 6px;letter-spacing:-.01em}
+.theme .sum{color:var(--ink-2);font-size:14.5px;margin:0 0 11px}
+.bar{display:flex;height:7px;margin:11px 0 9px;overflow:hidden}
+.bar i{display:block}
+.bar .p{background:var(--ok)}
+.bar .u{background:var(--ink-3)}
+.bar .n{background:#A81C19}
+.theme-meta{font-family:ui-monospace,monospace;font-size:11.5px;
+  color:var(--ink-3);display:flex;gap:13px;flex-wrap:wrap}
+.pill{font-family:ui-monospace,monospace;font-size:10.5px;letter-spacing:.06em;
+  text-transform:uppercase;border:1px solid var(--line);padding:2px 7px;
+  color:var(--ink-3);white-space:nowrap}
+.pill.warn{border-color:#8A5A00;color:#8A5A00}
+blockquote{margin:11px 0 0;padding:11px 0 0;border-top:1px solid var(--hair);
+  font-size:15px;line-height:1.5;color:var(--ink)}
+blockquote .src{display:block;font-family:ui-monospace,monospace;font-size:11.5px;
+  color:var(--ink-3);margin-top:7px}
+blockquote .src a{color:var(--accent);text-decoration:none}
+blockquote .src a:hover{text-decoration:underline}
+.toc{margin:22px 0 0;padding:0;list-style:none;columns:2;column-gap:26px}
+.toc li{margin-bottom:6px;font-size:14.5px;break-inside:avoid}
+.toc a{color:var(--accent);text-decoration:none}
+.toc a:hover{text-decoration:underline}
+@media(max-width:560px){.toc{columns:1}
+  h1{font-size:26px}
+  .wrap{padding:34px 18px 70px}}
 """
+
+
+def _embed(path: Path) -> str:
+    """A chart as a data URI, so the page is one self-contained file."""
+    import base64
+
+    data = base64.b64encode(path.read_bytes()).decode("ascii")
+    return f"data:image/png;base64,{data}"
+
+
+def _quote_block(quote: dict) -> str:
+    """One quote with its permalink, or nothing.
+
+    A quote without a source is not rendered at all. The whole claim of
+    these pages is that anything shown can be checked; an unlinked quote
+    on a report page would be exactly the sort of assertion the project
+    exists to avoid making.
+    """
+    if not quote.get("url"):
+        return ""
+    text = html.escape(quote["text"][:320])
+    likes = quote.get("like_count", 0)
+    channel = html.escape(quote.get("channel", "")[:30])
+    return (
+        f'<blockquote>{text}'
+        f'<span class="src">{likes:,} likes · {channel} · '
+        f'<a href="{quote["url"]}" target="_blank" rel="noopener">'
+        f'check it ↗</a></span></blockquote>'
+    )
+
+
+def _theme_card(cluster: dict) -> str:
+    """One theme: what it is, how it splits, and a quote you can check."""
+    s = cluster.get("sentiment", {})
+    pos = s.get("positive", 0.0)
+    neu = s.get("neutral", 0.0)
+    neg = s.get("negative", 0.0)
+    label = cluster.get("llm_label") or cluster.get("aspect_label", "—")
+    summary = cluster.get("llm_summary", "")
+
+    pills = [f'<span class="pill">{html.escape(cluster.get("aspect_label", ""))}</span>']
+    if cluster.get("sarcasm_risk"):
+        # Flagged rather than hidden: the sentiment score for a sarcastic
+        # cluster is the least trustworthy number on the page, and the
+        # method section promises this is surfaced, not quietly used.
+        pills.append('<span class="pill warn">sarcasm risk</span>')
+
+    quotes = "".join(
+        _quote_block(q) for q in cluster.get("quotes", [])[:2]
+    )
+
+    return f"""<div class="theme">
+  <div class="theme-top">
+    <h4>{html.escape(label)}</h4>
+    <div>{"".join(pills)}</div>
+  </div>
+  <p class="sum">{html.escape(summary)}</p>
+  <div class="bar" role="img" aria-label="{pos:.0%} positive, {neu:.0%} neutral, {neg:.0%} negative">
+    <i class="p" style="width:{pos:.1%}"></i>
+    <i class="u" style="width:{neu:.1%}"></i>
+    <i class="n" style="width:{neg:.1%}"></i>
+  </div>
+  <div class="theme-meta">
+    <span>{cluster['size']:,} comments</span>
+    <span>{cluster.get('total_likes', 0):,} likes</span>
+    <span>{cluster.get('channel_spread', 0)} channels</span>
+    <span>{pos:.0%} pos · {neg:.0%} neg</span>
+  </div>
+  {quotes}
+</div>"""
+
+
+def build_report_page(
+    subject: str,
+    display_name: str,
+    analysis: dict,
+    videos: list,
+    meta: dict,
+    charts: dict[str, Path] | None = None,
+    sources_url: str = "",
+) -> str:
+    """The full public report: what was found, shown, and checkable.
+
+    The audit page answers "is this real". This answers "what did you
+    find" — and every theme on it carries a quote with a permalink, so
+    the two questions have the same answer.
+    """
+    totals = analysis["totals"]
+    clusters = analysis.get("clusters", [])
+    car = [c for c in clusters if not c.get("is_meta")]
+    car.sort(key=lambda c: -c["size"])
+
+    charts = charts or {}
+    # Count only the themes actually shown. Meta clusters are excluded
+    # from the page, so counting them here would state a number a reader
+    # could not find by looking — on a page whose premise is that its
+    # numbers survive being checked.
+    flagged = sum(1 for c in car if c.get("sarcasm_risk"))
+
+    # Group by aspect, largest group first, themes within by size.
+    groups: dict[str, list] = {}
+    for c in car:
+        groups.setdefault(c.get("aspect_group", "Other"), []).append(c)
+    ordered = sorted(
+        groups.items(), key=lambda kv: -sum(x["size"] for x in kv[1])
+    )
+
+    def chart_figure(key: str, caption: str, wide: bool = False) -> str:
+        path = charts.get(key)
+        if not path or not Path(path).exists():
+            return ""
+        cls = "wide" if wide else ""
+        return (
+            f'<figure class="{cls}"><div class="scroll">'
+            f'<img src="{_embed(Path(path))}" alt="{html.escape(caption)}">'
+            f'</div><figcaption>{caption}</figcaption></figure>'
+        )
+
+    toc = "\n".join(
+        f'<li><a href="#{_slug(name)}">{html.escape(name)}</a> '
+        f'<span style="color:var(--ink-3)">· {sum(c["size"] for c in cl):,}</span></li>'
+        for name, cl in ordered
+    )
+
+    sections = "\n".join(
+        f'<div class="group" id="{_slug(name)}"><h3>{html.escape(name)} · '
+        f'{sum(c["size"] for c in cl):,} comments</h3>'
+        + "\n".join(_theme_card(c) for c in cl)
+        + "</div>"
+        for name, cl in ordered
+    )
+
+    top = car[0] if car else None
+    headline = (
+        f"The largest single theme is <b>{html.escape(top.get('llm_label',''))}</b>, "
+        f"{top['size']:,} comments carrying {top.get('total_likes',0):,} likes "
+        f"across {top.get('channel_spread',0)} channels."
+        if top else ""
+    )
+
+    sources_link = (
+        f'<p style="margin:18px 0 0"><a href="{sources_url}" '
+        f'style="color:var(--accent)">Every quote, with its permalink →</a></p>'
+        if sources_url else ""
+    )
+
+    return f"""<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{html.escape(display_name)} — what the comments say</title>
+<meta name="description" content="An analysis of {meta['raw']:,} YouTube comments about the {html.escape(display_name)}, with every quote linked to its source.">
+<style>{CSS}</style></head><body><div class="wrap">
+
+<header>
+  <p class="eyebrow">Comment analysis</p>
+  <h1>What {html.escape(display_name)} comment sections actually say</h1>
+  <p class="lede">
+    {meta['raw']:,} comments from {len(videos)} videos, grouped by meaning and
+    scored for sentiment. {headline}
+  </p>
+</header>
+
+<div class="stats">
+  <div class="stat"><b>{meta['raw']:,}</b><span>comments read</span></div>
+  <div class="stat"><b>{len(videos)}</b><span>videos</span></div>
+  <div class="stat"><b>{totals['clustered']:,}</b><span>analysed</span></div>
+  <div class="stat"><b>{len(car)}</b><span>themes found</span></div>
+</div>
+
+{chart_figure("composition",
+  "Not every comment is about the car. Comments about the video or its "
+  "presenter are separated out and excluded from the themes below.")}
+
+<h2>What people talk about</h2>
+<p style="color:var(--ink-2);margin:0 0 4px;max-width:66ch">
+  Each bar is a theme the clustering found, placed by the average sentiment
+  of its comments. Bar length is sentiment, not size — the number beside it
+  is how many comments it holds.
+</p>
+{chart_figure("aspects",
+  "Themes ranked by size, coloured by sentiment. Red is net negative, "
+  "green net positive, grey mixed or neutral.")}
+
+<h2>Jump to a theme</h2>
+<ul class="toc">{toc}</ul>
+
+<h2>The themes</h2>
+<p style="color:var(--ink-2);margin:0 0 4px;max-width:66ch">
+  Grouped by subject. Each bar shows the positive / neutral / negative split
+  within that theme, and each carries a real comment you can open on YouTube.
+</p>
+{sections}
+
+<h2>Volume against intensity</h2>
+<p style="color:var(--ink-2);margin:0 0 4px;max-width:66ch">
+  How much a theme is discussed, against how strongly. The top-right corner
+  is what a headline should be about; the top-left is loud but niche.
+</p>
+{chart_figure("volume-intensity",
+  "Each dot is a theme. Horizontal is comment volume, vertical is intensity "
+  "of feeling, and dot size is like-weighted reach.", wide=True)}
+
+<h2>Method, and what it gets wrong</h2>
+<div class="note">
+  <b>This is not a poll.</b> People who comment are not people who buy, and
+  they skew toward enthusiasts and toward strong opinions. This measures what
+  the comment section thinks, which is a proxy for public perception and a
+  poor proxy for sales.
+  <br><br>
+  <b>Sentiment is scored by machine and sampled.</b> Comments are grouped by
+  meaning, then a multilingual model scores a sample from each group.
+  Sarcasm detection is weak, especially in Japanese —
+  {flagged} theme(s) here are flagged for sarcasm risk, and their scores
+  should be read as uncertain rather than wrong.
+  <br><br>
+  <b>Nothing was written by hand.</b> The clusters, counts and quotes come
+  from the pipeline. Quotes are checked against the stored corpus before
+  publication, so a paraphrase cannot reach the page.
+  {sources_link}
+</div>
+
+<footer>
+  {html.escape(display_name)} · {meta['raw']:,} comments from {len(videos)} videos ·
+  fetched {html.escape(meta.get('fetched_on', ''))} ·
+  generated {datetime.now().strftime('%Y-%m-%d')}<br>
+  Comment authors are not named; the permalink is what makes a quote
+  checkable. Spotted an error? <a href="mailto:sources@opitrics.com"
+  style="color:var(--accent)">sources@opitrics.com</a>
+</footer>
+</div></body></html>"""
+
+
+def _slug(text: str) -> str:
+    import re
+
+    return re.sub(r"[^a-z0-9]+", "-", text.lower()).strip("-") or "group"
 
 
 def build_audit_page(
