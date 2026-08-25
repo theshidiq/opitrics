@@ -10,33 +10,39 @@ user's call, per profile, per platform.
 
 ## Name
 
-**Opitrics**, kept. It is a mediocre name — three plausible
-pronunciations, and "tricks" sits inside a word whose whole pitch is
-honesty — but no alternative was worth the re-render cost. The wordmark
-is burned into the bottom-left safe area of every rendered short
+**Opitrics**, kept. It is a contraction of **opinion metrics**, which
+is what the pipeline does: it turns opinions into measurements.
+
+The derivation settles the two things that would otherwise be wrong
+with the name. Pronunciation is **oh-PIT-rics** — not an arbitrary
+choice to dodge the "tricks" reading, but what *opinion* (oh-PIN-yun)
+already implies, which is why it will stick. And the name is not
+meaningless after all; it just needs saying once.
+
+So wherever there is room for a line of text, say the derivation rather
+than inventing a second concept: **Opitrics — opinion metrics**.
+
+One limit on that phrase: it cannot stand alone as a bio. "Opinion
+metrics" sounds like market research, market research implies buyers,
+and commenters are not buyers. It works beside the name as an
+etymology; the bios below do the actual explaining and carry the
+caveat.
+
+A rename was considered and rejected. The wordmark is burned into the
+bottom-left safe area of every rendered short
 (`remotion/src/components.tsx:85`), so a rename means a window where
-the watermark and the account name disagree. On an account whose
+the watermark and the account name disagree — on an account whose
 product is "what you see matches what's true", that is a self-inflicted
 wound in the wrong place.
-
-The name is not asked to do work it cannot. Wherever there is room for
-a line of text: **Opitrics — comment forensics**. Pronunciation is
-settled in public as **oh-PIT-rics**; stressing the second syllable
-kills the "tricks" reading.
-
-If this is ever reopened, the moment is *now*, while the published
-corpus is small enough that re-rendering is an afternoon rather than a
-project. The alternative to take would be **Comment Forensics** — the
-only candidate a stranger understands with zero explanation.
 
 ### Display names
 
 | Platform  | Display name                   |
 |-----------|--------------------------------|
-| YouTube   | `Opitrics`                     |
-| X         | `Opitrics — comment forensics` |
-| TikTok    | `Opitrics — comment forensics` |
-| Instagram | `Opitrics — comment forensics` |
+| YouTube   | `Opitrics`                    |
+| X         | `Opitrics — opinion metrics`  |
+| TikTok    | `Opitrics — opinion metrics`  |
+| Instagram | `Opitrics — opinion metrics`  |
 
 ### Handle
 
@@ -122,7 +128,7 @@ one when it is.
 
 No name on this, no face. Just the count and the receipts.
 
-(oh-PIT-rics)
+(Opitrics — opinion metrics. oh-PIT-rics.)
 ```
 
 Three things hold this together:
