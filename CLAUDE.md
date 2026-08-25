@@ -52,10 +52,20 @@ Order matters; each stage reads the previous one's output.
 .venv/bin/python scripts/cluster.py  --subject byd-racco    # clean, embed, dedupe, k-means
 .venv/bin/python scripts/analyze.py  --subject byd-racco    # sentiment + aspect mapping
 .venv/bin/python scripts/report.py   --subject byd-racco    # LLM names themes → analysis.json
-.venv/bin/python scripts/thread.py   --subject byd-racco    # X thread
-.venv/bin/python scripts/shorts.py   --subject byd-racco --all   # five vertical shorts
 .venv/bin/python scripts/sources.py  --subject byd-racco    # audit page
+.venv/bin/python scripts/deploy_sources.py --subject byd-racco   # → opitrics.com
+.venv/bin/python scripts/thread.py   --subject byd-racco --all \
+    --sources-url https://opitrics.com/byd-racco/           # X threads
+.venv/bin/python scripts/shorts.py   --subject byd-racco --all \
+    --sources-url https://opitrics.com/byd-racco/           # five vertical shorts
+.venv/bin/python scripts/preflight.py --subject byd-racco   # platform spec check
 ```
+
+**Sources are built and deployed before threads and shorts, not after.**
+Both closing cards say "check the work" and name the URL;
+`--sources-url` defaults to empty, so omitting it ships a promise with
+no destination, and passing it before the deploy ships a 404 under the
+one card whose whole job is being checkable.
 
 `fetch` is the only stage that spends YouTube quota (10,000 units/day;
 search costs 100). Everything downstream reads the SQLite cache, so

@@ -413,23 +413,32 @@ empty — the avatar overlaps there.
 No subject car in the banner: it would date the channel to one video
 and imply the channel is about that car.
 
-## Open question, partly resolved
+## Resolved: the permalink promise on screen
 
 The bio promises every number links to its source. The question was
 whether that promise should appear *on screen* rather than only in the
 description and the audit pages, since a viewer who never taps through
 would otherwise see the watermark and nothing else.
 
-Half of it is now answered in code. Every angle ends on a `sources`
-card reading "every quote links to the original comment" under a
-`check the work` eyebrow (`opitrics/render/sequence.py:243`), so the
-promise is on screen in all five shorts.
+It does, in two halves, both now closed.
 
-What is still open is the URL. `scripts/shorts.py --sources-url` bakes
-a specific address into that card's narration, and it is currently
-unset, so the card makes the promise without saying where to go. That
-is not a branding decision — it waits on the sources site being live at
-a stable address, which is `web-steward`'s call. Until then the shorts
-should not name a URL that might 404: a dead link under "check the
-work" is worse than no link at all, on the one card whose entire job is
-to be checkable.
+Every angle ends on a `sources` card reading "every quote links to the
+original comment" under a `check the work` eyebrow
+(`opitrics/render/sequence.py:243`).
+
+The URL is now real. The site went live at `https://opitrics.com` on
+2026-08-26 — GitHub Pages from `theshidiq/opitrics-sources`, custom
+domain, HTTPS enforced — so `--sources-url https://opitrics.com/<subject>/`
+is passed to both `shorts.py` and `thread.py`, and the address is named
+rather than merely implied.
+
+**Pass it on every build from here.** It defaults to empty, and an
+empty value silently degrades the closing card to a promise with no
+destination — the one card whose entire job is being checkable. The
+inverse failure is worse: naming a URL before the page exists puts a
+404 under "check the work", which is why this waited.
+
+One standing dependency. The card's address is only as good as the
+deploy, so publishing an analysis means publishing its sources page in
+the same sitting. A short that ships pointing at a subject directory
+nobody deployed is the failure this section exists to prevent.
