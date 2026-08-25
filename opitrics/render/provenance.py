@@ -19,6 +19,11 @@ from datetime import datetime
 from pathlib import Path
 
 
+# Printed on every published report. Changing it changes what is on
+# pages already out in the world, so it lives here rather than inline.
+CONTACT_EMAIL = "info@opitrics.com"
+
+
 def comment_url(video_id: str, comment_id: str) -> str:
     """A permalink to one comment.
 
@@ -455,8 +460,8 @@ def build_report_page(
   fetched {html.escape(meta.get('fetched_on', ''))} ·
   generated {datetime.now().strftime('%Y-%m-%d')}<br>
   Comment authors are not named; the permalink is what makes a quote
-  checkable. Spotted an error? <a href="mailto:sources@opitrics.com"
-  style="color:var(--accent)">sources@opitrics.com</a>
+  checkable. Spotted an error? <a href="mailto:{CONTACT_EMAIL}"
+  style="color:var(--accent)">{CONTACT_EMAIL}</a>
 </footer>
 </div></body></html>"""
 
