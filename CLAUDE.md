@@ -14,11 +14,22 @@ costs more than the view was worth.
 **This file is the pipeline.** Fetching, clustering, sentiment,
 rendering, publishing plumbing.
 
-**Content and distribution judgment belongs to the `social-strategist`
-agent** (`.claude/agents/social-strategist.md`): angles, hooks,
-narration voice, titles, platform fit, pre-publication review. When a
-task is "what should this short say" rather than "why does this render
-wrong", hand it there.
+**Social media is the main assistant's.** Account management, posting
+cadence, what ships and when, pre-publication checks, and the profile
+layer in `brand/`. Consult the `social-strategist` agent
+(`.claude/agents/social-strategist.md`) for editorial judgment —
+angles, hooks, narration voice, titles, platform fit — and decide with
+it rather than handing the whole task over. When the question is "what
+should this short say", that is a consultation; when it is "should
+this go out today", that is yours.
+
+**The public web presence belongs to the `web-steward` agent**
+(`.claude/agents/web-steward.md`): the sources audit pages, GitHub
+Pages, `opitrics.com` and its DNS, Workspace email. Anything a visitor
+loads in a browser that is not a video or a post.
+
+Nobody publishes without the user saying so for that specific item.
+That applies to all three.
 
 ## Running it
 
