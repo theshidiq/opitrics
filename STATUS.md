@@ -150,9 +150,8 @@ video list or a quote list. Rebuilt: five threads, longest post 279 of
 
 **Email.** Workspace Starter on the domain, MX live. One seat, aliases
 per platform. `info@opitrics.com` is on five public pages as the route
-for both corrections and takedown requests — **it has not been
-confirmed to receive; send it a test.** A bouncing corrections address
-on a page arguing its numbers survive checking is worse than none.
+for both corrections and takedown requests, and **confirmed receiving**
+(2026-08-26).
 
 There is no Google Workspace **Admin SDK** connector available in this
 session and none in the MCP registry, so aliases, domain verification
@@ -198,8 +197,7 @@ default, so a muted viewer gets the claim and no way to act on it.
 Still a render-layer change and still a content problem; the gap is
 just smaller and more specific than it was.
 
-**Everyone, before the first send:** `info@opitrics.com` is live on
-both public pages as the corrections and takedown route and MX
-resolves to Google, but nothing has been sent to it. Send one. A
-bouncing corrections address on a page arguing its numbers survive
-checking is worse than no address, and it is one email to rule out.
+`info@opitrics.com` receives — confirmed by the user 2026-08-26. The
+corrections and takedown route on both public pages is live, so the
+"if a number is wrong I want to know" promise in `brand/PROFILE.md`
+is one somebody can actually act on.
