@@ -51,7 +51,31 @@ shows the `opitrics.com` form, so web-steward may have already decided
 — confirm rather than assume, and confirm the deploy actually serves
 that URL before anything ships against it.
 
-**2. Instagram automation is gated on hosting, not on credentials.**
+**2a. Instagram credentials are DONE and verified** (2026-08-26). All
+five keys are in `.env`: `META_APP_ID`, `META_APP_SECRET`,
+`META_ACCESS_TOKEN`, `INSTAGRAM_USER_ID`, `FACEBOOK_PAGE_ID`. Confirmed
+working against the live Graph API — the account resolves as
+`opinionmetrics`, and `content_publishing_limit` returns 0 of 100 per
+24h. Note that limit: `meta.py` assumes 25.
+
+**App Review is not needed.** Meta's own docs are explicit — Standard
+Access covers apps serving accounts you own or manage, which is this
+case. The app sits in `dev_mode` with the Instagram account added as a
+Tester, and that is the correct end state, not a temporary one.
+
+Two things that cost an hour and would cost the next person the same.
+The Page is owned by a **business portfolio**, so `me/accounts` returns
+an empty array and `me/businesses` fails with "(#100) An owning
+business is required for this request". The IDs are readable instead
+from Business Settings at `business.facebook.com` → Halaman, or by
+querying the Page node directly once its ID is known. **`meta.py` may
+hit the same wall** if it derives a Page token via `me/accounts` —
+unverified, and worth checking before the first real publish. Also,
+Instagram's *web* settings cannot link a Facebook Page at all; the link
+was made from the Facebook side, under the business portfolio.
+
+**2b. Instagram automation is still gated on hosting, not on
+credentials.**
 `opitrics/publish/meta.py` documents it: Meta does not accept an
 upload. It is handed a **public URL and fetches the file itself**, so a
 local path cannot be used and neither can an authenticated link. The
