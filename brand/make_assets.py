@@ -382,7 +382,16 @@ def banner() -> Path:
 
 
 def banner_crops(src: Path) -> list[Path]:
-    """The three crops YouTube actually shows, for checking before upload."""
+    """The crops each platform actually shows, for checking before upload.
+
+    All are centre crops of the same master, which is why the text block
+    is centred rather than sitting where a single platform wants it: one
+    render has to survive 6:1 and 3:1 without re-laying anything out.
+
+    X's header is 3:1 and is the odd one — it is far taller relative to
+    its width than YouTube's visible strip, so it picks up field texture
+    above and below the text where YouTube shows almost none.
+    """
     img = Image.open(src)
     W, H = img.size
     out = []
@@ -390,12 +399,23 @@ def banner_crops(src: Path) -> list[Path]:
     crops = {
         "mobile-1546x423": (1546, 423),
         "desktop-2560x423": (2560, 423),
+        # X header. Uploaded at 1500x500; cropped at 2400x800 first so
+        # the downscale is a clean 1.6x rather than resampling from an
+        # awkward ratio.
+        "x-2400x800": (2400, 800),
     }
     for name, (cw, ch) in crops.items():
         x0 = (W - cw) // 2
         y0 = (H - ch) // 2
         p = OUT / f"banner-crop-{name}.png"
         img.crop((x0, y0, x0 + cw, y0 + ch)).save(p)
+        out.append(p)
+
+    # The X header at its actual upload size, from the 3:1 crop.
+    x_src = OUT / "banner-crop-x-2400x800.png"
+    if x_src.exists():
+        p = OUT / "header-x-1500x500.png"
+        Image.open(x_src).resize((1500, 500), Image.LANCZOS).save(p)
         out.append(p)
     return out
 
