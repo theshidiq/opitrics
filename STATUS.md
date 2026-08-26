@@ -16,13 +16,30 @@ shorts rebuilt against the live URL).
 
 | Platform  | Handle           | Account | Credentials | Can publish |
 |-----------|------------------|---------|-------------|-------------|
-| X         | `opitrics`       | held    | in `.env`, untested | unknown |
+| X         | `opitrics`       | held    | **verified** | **yes — posting** |
 | TikTok    | `opitrics`       | held    | **verified** | **yes** |
 | Instagram | `opinionmetrics` | held    | **verified** | blocked — see below |
 | YouTube   | `opitrics`       | not claimed | — | blocked — see below |
 
-Nothing has been posted anywhere. No bios or assets pasted in yet;
-`brand/PROFILE.md` has all of it ready.
+**First publication: the `quotes` thread, X, 2026-08-26.**
+`x.com/opitrics/status/2092531936271245540` — 10 posts, one card each,
+receipt complete with no errors. Nothing has been posted anywhere else.
+No bios or assets pasted in yet; `brand/PROFILE.md` has all of it ready.
+
+Three things that only the first live post could settle:
+
+- **Write scope works.** `verify_credentials` is a read call and passes
+  on a read-only token, so nothing before this proved the app could
+  actually post.
+- **X credits are prepaid, not billed in arrears.** "Pay as you go"
+  reads as the latter; a zero balance returns `402 credits depleted`.
+  It failed on the first call, so nothing partial reached the timeline
+  — but a mid-thread exhaustion would leave half a thread published,
+  so keep a balance ahead of a run rather than topping up on failure.
+- **The app cannot read.** Free tier is write-only: `get_tweets` on the
+  posts it just made returns 401. Verification is the receipt in
+  `content/threads/<angle>/posted.json`, or opening the URL. Do not
+  build anything that reads back from X.
 
 **On signing up with aliases.** An alias is an address, not an account —
 it has no password and cannot be signed into, so "Sign in with Google"
@@ -180,10 +197,15 @@ falls through to Hiragino Sans, which `CLAUDE.md` records as rendering
 tofu. Latent while CJK lives in matplotlib quote cards, certain once
 every card is Japanese.
 
-**Social (main assistant)** — which of the five rendered shorts goes
-first, how the rest are sequenced, and the launch post. Not blocked by
-anything above; TikTok can publish today and X is untested but
-probably fine.
+**Social (main assistant)** — the `quotes` thread is live on X, so the
+open questions are now the four remaining threads and how far apart
+they go, plus which of the five shorts leads and where. X is proven
+end to end; TikTok can publish today.
+
+The account has one thread and no bio, avatar or banner. Everything is
+built in `brand/out/` and worded in `brand/PROFILE.md`; a visitor
+arriving from that thread currently lands on an empty profile, which is
+the cheapest thing on this board to fix.
 
 One that is nobody's yet, now narrowed. The promise itself **is** on
 screen: every short closes on a card reading "every quote links to the
