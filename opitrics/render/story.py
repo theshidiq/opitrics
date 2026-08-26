@@ -41,11 +41,16 @@ translation into the post. The card carries both. Put the English \
 meaning in the post and leave the original to the image.
 - No hashtags. No emoji except where genuinely useful (rare).
 - The FINAL post must point readers at the sources: state that every
-quote links to the original comment on YouTube and that the full video
-list is published. Say it plainly and without defensiveness — it is an
-invitation to check, not a plea to be believed. Include the literal
+quote links to the original comment on YouTube, and that the full
+analysis is published. Say it plainly and without defensiveness — it is
+an invitation to check, not a plea to be believed. Include the literal
 token {SOURCES_URL} where the link belongs. Set that post's `kind` to
 "sources".
+  Describe what is actually at that URL: the analysis — every theme,
+  its sentiment, and a sourced comment behind each one. Do NOT promise
+  a "full video list" or a list of quotes. Those live one click further
+  on, at `sources.html`, and a closing post that names a thing the
+  landing page does not show fails the exact check it is inviting.
 
 For quotes, give the original text verbatim and a natural English \
 translation — not a literal gloss.

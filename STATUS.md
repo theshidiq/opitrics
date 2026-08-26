@@ -9,7 +9,8 @@ record of *decisions*. This file is the record of *state* — what is
 done, what is blocked, and on whom. If something here stops being
 state and becomes a decision, move it there and drop it from here.
 
-Last updated 2026-08-26 (web presence: domain live, report published).
+Last updated 2026-08-26 (domain live, report published, threads and
+shorts rebuilt against the live URL).
 
 ## Accounts
 
@@ -134,6 +135,19 @@ The audit page moved to `byd-racco/sources.html` and the old URL still
 resolves as the index. Every theme carries a comment with a permalink;
 a quote with no source is not rendered at all.
 
+**The threads described the wrong page, and now don't.** All five
+closing posts promised "the full video list is published" at
+`opitrics.com/byd-racco/` — which serves the *report*. The video list
+is one click further on, at `sources.html`. The wording came from the
+prompt in `story.py`, written when that URL was the audit page, and it
+did not follow when the report took over the path.
+
+Small, but it sat under "check the data yourself", which is the one
+claim that has to survive being checked. The prompt now tells the model
+to describe what is actually at the URL and explicitly not to promise a
+video list or a quote list. Rebuilt: five threads, longest post 279 of
+280, 27 quotes verbatim against the corpus, 23/23 translations clean.
+
 **Email.** Workspace Starter on the domain, MX live. One seat, aliases
 per platform. `info@opitrics.com` is on five public pages as the route
 for both corrections and takedown requests — **it has not been
@@ -172,21 +186,20 @@ first, how the rest are sequenced, and the launch post. Not blocked by
 anything above; TikTok can publish today and X is untested but
 probably fine.
 
-One that is nobody's yet: the bios promise every number links to its
-source, but on the shorts that promise appears only in the description
-and the audit pages. A viewer who never taps through sees the watermark
-and nothing else — and that promise is the whole differentiator. It is
-a render-layer change, so pipeline work, but it is a content problem.
-Worth someone owning.
+One that is nobody's yet, now narrowed. The promise itself **is** on
+screen: every short closes on a card reading "every quote links to the
+original comment" under a `check the work` eyebrow — verified by
+pulling the final frame, not by reading the source.
 
-What changed under it: the destination is now a readable report rather
-than a wall of quotes, so tapping through is worth more than it was.
-The promise is still invisible until they tap, which is the actual
-problem and is untouched.
+What is missing is the destination. `--sources-url` reaches the
+narration, so the address is spoken and written into the description,
+but no card renders it as text. Vertical video is watched muted by
+default, so a muted viewer gets the claim and no way to act on it.
+Still a render-layer change and still a content problem; the gap is
+just smaller and more specific than it was.
 
-Threads on disk already carry `https://opitrics.com/byd-racco/`, so
-they are consistent with the live site. Note that URL is now the
-**report**, not the audit page — which is the better landing page for a
-thread link, but if any card's wording promises a raw quote list, it
-points somewhere slightly different from what it says. Worth a read
-before the first post.
+**Everyone, before the first send:** `info@opitrics.com` is live on
+both public pages as the corrections and takedown route and MX
+resolves to Google, but nothing has been sent to it. Send one. A
+bouncing corrections address on a page arguing its numbers survive
+checking is worse than no address, and it is one email to rule out.
