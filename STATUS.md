@@ -177,6 +177,41 @@ service-account client was considered and rejected: it needs a
 domain-wide-delegation key on disk to save a handful of one-time
 clicks.
 
+## Possible, not planned: selling the analysis
+
+Raised 2026-08-26. Nobody has approached us and there is no product, no
+pricing and no named buyer. It is recorded because one live constraint
+protects it and could otherwise be relaxed by someone who does not know
+why it exists.
+
+**Never imply sales, demand or market outcome. Not once, anywhere.**
+That rule is already in `CLAUDE.md`, in the bio, and as rule 4 in the
+`social-strategist` brief, where it exists to stop a bad reply. It now
+has a second job: if a brand ever does approach, "we never claimed
+demand signal" has to be true across the whole archive, retroactively.
+Every post is evidence in that conversation. A single loose line costs
+more later than it gains now.
+
+What is genuinely sellable is **discourse analysis, not market
+research** — what the conversation about a car contains, with every
+claim traceable to a permalink. Nobody else does that verifiably; the
+comparable tools are keyword counts. What is NOT sellable is anything
+about buyers, and "business decision analysis" is the phrase that
+implies otherwise. A client who acts on comment sentiment as demand and
+is wrong is a refund plus a reputation, which is a far worse failure
+than a wrong reply.
+
+Two things this does not require deciding yet. The buyer is unknown —
+OEM comms, agencies and automotive media want different artefacts, so
+let the public account surface who actually turns up rather than
+guessing. And the pipeline is subject-agnostic: only the aspect
+taxonomy is car-specific, so going beyond cars is a taxonomy swap
+rather than a rebuild. Nothing is painted into a corner.
+
+One consequence for what ships: the `method` thread is the portfolio
+piece. A prospective buyer reads that one hardest, because it is the
+one that says whether the numbers are real.
+
 ## Open, by owner
 
 **web-steward** — the public MP4 question above is the only one left;

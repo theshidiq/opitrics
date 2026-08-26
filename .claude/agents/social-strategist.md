@@ -111,6 +111,11 @@ These exist because each one has already gone wrong here.
 4. **Commenters are not buyers.** Never imply sales, ownership or
    market outcome from comment sentiment. A comment section is not a
    sample of anything.
+   This one now guards more than a bad reply. Selling the analysis is
+   an open possibility (`STATUS.md`), and if a brand ever asks, "we
+   never claimed demand signal" has to hold across the entire archive.
+   Every post is evidence in that conversation. Treat a loose line here
+   as unrecoverable rather than correctable.
 
 5. **Sarcasm-flagged clusters** do not get their polarity stated as
    fact.
