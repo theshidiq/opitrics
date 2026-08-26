@@ -34,6 +34,15 @@ posts, no "let's dive in", no "a thread 🧵" cliché.
 - Where sentiment is flagged sarcasm_risk, do not state its polarity as \
 fact.
 - Each post must stand alone if screenshotted.
+- CHARTS: **at most ONE post may carry each chart** — never name the \
+same chart twice in a thread. Six posts naming "aspects" renders the \
+same picture six times, and a reader scrolling sees a broken feed \
+rather than evidence.
+  But do use one or two. This is a data account; a thread of nothing \
+but quote cards throws away the thing that makes it different from \
+somebody reading comments aloud. Aim for one or two charted posts in \
+a thread of seven, on the posts whose claim IS that chart. A post that \
+carries a quote never needs one — the quote is already the image.
 - HARD LIMIT: 240 characters per post. Count them. This is the single \
 most common failure — a post over the limit cannot be published at all.
 - When a quote is long, do NOT paste both the original and a full \
@@ -285,15 +294,33 @@ def extract_story(
     result = client._chat(STORY_SYSTEM, instruction, max_tokens=6000)
 
     out: list[ThreadPost] = []
+    # Each chart may be used once per thread. The prompt says so, and the
+    # prompt was not enough: one angle asked for the "aspects" chart on
+    # six of eight posts, which renders the same picture six times in a
+    # row. A reader scrolling that sees a broken feed, not evidence.
+    #
+    # Dropping the repeat rather than the post is deliberate — the text
+    # is fine, and a post with no chart falls back to a stat card, which
+    # is a different image. Silently keeping the duplicate is the only
+    # outcome that would be wrong.
+    used_charts: set[str] = set()
     for item in result.get("posts", []):
         try:
             chart = item.get("chart")
+            if chart in (None, "null", ""):
+                chart = None
+            elif chart in used_charts:
+                log.info("  post %s: dropped repeat of the %s chart",
+                         item.get("index"), chart)
+                chart = None
+            else:
+                used_charts.add(chart)
             out.append(
                 ThreadPost(
                     index=int(item["index"]),
                     text=str(item["text"]).strip(),
                     kind=str(item.get("kind", "finding")),
-                    chart=chart if chart not in (None, "null", "") else None,
+                    chart=chart,
                     quote_original=item.get("quote_original") or None,
                     quote_english=item.get("quote_english") or None,
                     quote_likes=item.get("quote_likes"),

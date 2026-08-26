@@ -244,7 +244,7 @@ def build_angle(
                 print(f"    {YELLOW}{path.name} · chart {post.chart} missing{RESET}")
             continue
 
-        figure, caption = _pick_stat(post, analysis, meta)
+        figure, caption = _pick_stat(post, analysis, meta, angle.key)
         cards_mod.stat_card(figure, caption, post.text[:150], subject, path)
         print(f"    {DIM}{path.name} · stat{RESET}")
 
@@ -252,17 +252,46 @@ def build_angle(
     return True
 
 
-def _pick_stat(post, analysis: dict, meta: dict) -> tuple[str, str]:
-    """Choose a headline figure for a post that has no chart or quote."""
+def _pick_stat(post, analysis: dict, meta: dict, angle_key: str = "") -> tuple[str, str]:
+    """Choose a headline figure for a post that has no chart or quote.
+
+    Keyed by angle, not only by post kind. The first version returned
+    the corpus total for every hook and the same 78% for every finding,
+    so five threads built from one corpus opened on the same card — and
+    an account whose claim is that these are five different findings
+    cannot afford its five openings to be one picture.
+
+    The shorts hit this first and solved it the same way (`_opening()`
+    in `opitrics/render/sequence.py`).
+    """
     totals = analysis["totals"]
     clustered = max(totals["clustered"], 1)
+    clusters = analysis.get("clusters", [])
+    share = round(100 * totals["car"] / clustered)
 
-    if post.kind == "hook":
-        return f"{meta['raw']:,}", "comments read"
     if post.kind == "closer":
         return f"{meta['videos']}", "videos analysed"
 
-    share = round(100 * totals["car"] / clustered)
+    if post.kind == "hook":
+        if angle_key == "fight":
+            return f"{100 - share}%", "not about the car at all"
+        if angle_key == "defenders" and clusters:
+            best = max(clusters, key=lambda c: c["sentiment"]["polarity"])
+            return f"{best['size']:,}", "came to defend it"
+        if angle_key == "quotes":
+            quoted = sum(len(c.get("quotes", [])) for c in clusters)
+            if quoted:
+                return f"{quoted:,}", "comments quoted verbatim"
+        if angle_key == "method":
+            return f"{len(clusters)}", "themes, named by hand"
+        return f"{meta['raw']:,}", "comments read"
+
+    # Findings: the same reasoning one level down. "78% about the car"
+    # on every non-hook card is the same collision, just less visible.
+    if angle_key == "fight":
+        return f"{totals['meta']:,}", "arguing, not reviewing"
+    if angle_key == "method" and clusters:
+        return f"{len(clusters)}", "themes found"
     return f"{share}%", "actually about the car"
 
 
