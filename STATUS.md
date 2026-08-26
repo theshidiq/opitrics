@@ -237,10 +237,40 @@ open questions are now the four remaining threads and how far apart
 they go, plus which of the five shorts leads and where. X is proven
 end to end; TikTok can publish today.
 
-The account has one thread and no bio, avatar or banner. Everything is
-built in `brand/out/` and worded in `brand/PROFILE.md`; a visitor
-arriving from that thread currently lands on an empty profile, which is
-the cheapest thing on this board to fix.
+**The X profile is filled in** (2026-08-26) — bio, avatar, header,
+display name. A visitor arriving from the live thread now lands on a
+finished profile rather than an empty one.
+
+An X-shaped header exists at `brand/out/header-x-1500x500.png`. X's
+header is 3:1 where YouTube's visible strip is 6:1, so the older
+`banner-crop-*` files letterbox or clip the wordmark there. Both come
+from the same master; the text block is centred precisely so one render
+survives both ratios.
+
+Two shorts cannot ship as rendered, found by checking the scripts
+against `analysis.json`:
+
+- **`defect` is disqualified.** It narrates "Range expectations dominate
+  the chatter" — but "Real-world range expectations" is **rank 39 of
+  40, n=239**, the second-smallest cluster in the corpus. Beat 2 also
+  says the loudest complaint is range rather than the badge, inverting
+  the finding: the badge argument is rank 1 at 681. Rules 3 and 6 in one
+  beat, and the video's own closing card sends viewers to a page that
+  now ranks every theme by count. Fix is a re-scope in `angles.py` onto
+  "Underbody quality criticism" (435, rank 8) or "Battery ground
+  clearance risk" (359) — pipeline work, not a narration edit.
+- **`defenders` holds** until beats 2 and 3 are re-cut. They quote the
+  "Encouraging purchase" cluster, which is `sarcasm_risk: True`, and
+  narrate it as sincere support with a motive nobody expressed
+  ("He's not even a buyer. He just wants to see it happen"). The actual
+  comment is 「そこまで惚れたなら買えば良いじゃん!」 — needling the
+  reviewer. Rule 5. Clean substitute: "Hope for domestic competition"
+  (317, +0.440, unflagged).
+
+Worth recording as a gap rather than a bug: `check_quotes()` passed
+`defenders` because the quoted words are real. What is fabricated is the
+sentence *around* the quote. **The gate verifies quotes; nothing
+verifies the narration about a quote.**
 
 One that is nobody's yet, now narrowed. The promise itself **is** on
 screen: every short closes on a card reading "every quote links to the
