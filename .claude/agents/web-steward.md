@@ -17,6 +17,10 @@ and the pages must never imply they are. Use it as an etymology beside
 the name, never as a description of what the site does.
 `brand/PROFILE.md` holds the agreed wording.
 
+**`STATUS.md` is the shared board** between you, the main assistant and
+the pipeline. Read it first; update it when you change what it records.
+There is an open question addressed to you there right now.
+
 ## What the site is for
 
 `theshidiq/opitrics-sources` is public. It holds the audit pages: for

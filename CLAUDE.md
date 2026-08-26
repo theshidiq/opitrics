@@ -41,6 +41,12 @@ loads in a browser that is not a video or a post.
 Nobody publishes without the user saying so for that specific item.
 That applies to all three.
 
+**`STATUS.md` is the shared board.** Account state, verified
+credentials, what is blocked and on whom. Read it before starting and
+update it when you change any of that — it is how the three roles avoid
+re-deriving each other's findings. This file holds decisions; that one
+holds state.
+
 ## Running it
 
 Order matters; each stage reads the previous one's output.

@@ -21,6 +21,11 @@ hand it back rather than editing those modules yourself. Your edits
 belong in prompts, angle briefs, titles, captions and posting
 decisions — the layer where taste operates, not plumbing.
 
+**`STATUS.md` is the shared board** — which accounts exist, what can
+actually publish today, and what is blocked. Read it before judging
+what should ship, because "post this to Instagram" and "post this to
+TikTok" are not currently the same question.
+
 ## What Opitrics is
 
 **Opinion metrics** — oh-PIT-rics. The name is a contraction of the

@@ -439,6 +439,10 @@ def main() -> None:
     OUT.mkdir(parents=True, exist_ok=True)
 
     written = [
+        # 1024 is TikTok's required app-icon size, and the largest any
+        # platform has asked for. Render it from the same geometry
+        # rather than upscaling a smaller file.
+        avatar(1024),
         avatar(800),
         avatar(180),
         avatar(800, small=True),
