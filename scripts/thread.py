@@ -148,6 +148,13 @@ def build_angle(
     # already run, so anything that overflows is trimmed here.
     placeholder = sources_url or "[sources page — publish and paste URL]"
     for post in story.posts:
+        # The model sometimes writes a perfectly good sources post and
+        # simply omits the token, leaving a closing post that promises a
+        # published analysis and gives no way to reach it. Regenerating
+        # for this is wasteful — where the URL goes is mechanical, so
+        # append it rather than asking again.
+        if post.kind == "sources" and "{SOURCES_URL}" not in post.text:
+            post.text = post.text.rstrip() + " {SOURCES_URL}"
         if "{SOURCES_URL}" not in post.text:
             continue
         post.text = post.text.replace("{SOURCES_URL}", placeholder)
@@ -271,7 +278,12 @@ def build_angle(
             continue
 
         figure, caption = _pick_stat(post, analysis, meta, angle.key)
-        cards_mod.stat_card(figure, caption, post.text[:150], subject, path)
+        # No detail line. It used to be `post.text[:150]`, which printed
+        # the post's own words underneath its own figure — so a reader
+        # got the same sentence twice, once as prose and once as an
+        # image of that prose. No amount of rewriting the post could fix
+        # that, because the card copied whatever the rewrite produced.
+        cards_mod.stat_card(figure, caption, "", subject, path)
         print(f"    {DIM}{path.name} · stat{RESET}")
 
     print(f"  {GREEN}ready{RESET} {DIM}{out_dir}{RESET}")
