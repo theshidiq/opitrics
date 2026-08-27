@@ -15,6 +15,7 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import re
 import sys
 from pathlib import Path
 
@@ -161,12 +162,41 @@ def build_angle(
             post.text = post.text.rstrip() + " {SOURCES_URL}"
         if "{SOURCES_URL}" not in post.text:
             continue
+        # Nothing may follow the URL on the same run of characters. The
+        # model writes "published at {SOURCES_URL}: every theme, its
+        # sentiment..." because the colon introduces the list, which is
+        # correct prose and wrong on X: the punctuation reads as part of
+        # the address, and some clients pull it into the link. A full
+        # stop and a space put the list in its own sentence.
+        post.text = re.sub(
+            r"\{SOURCES_URL\}\s*([:;,])\s*", "{SOURCES_URL}. ", post.text
+        )
+        # And a colon introducing the link reads like a label. This is
+        # the one sentence every follower sees in every thread, so it
+        # gets a full stop.
+        post.text = re.sub(r"\s*:\s*\{SOURCES_URL\}", ". {SOURCES_URL}",
+                           post.text)
         post.text = post.text.replace("{SOURCES_URL}", placeholder)
         if len(post.text) > LIMIT:
-            excess = len(post.text) - LIMIT + 1
+            # Drop whole sentences, not characters. Trimming by length
+            # cut a closing post to "...links to the original co
+            # https://..." — a word sliced in half in the one post every
+            # follower sees in every thread.
             head, _, tail = post.text.partition(placeholder)
-            head = head[: max(0, len(head) - excess)].rstrip(" ,;:—-")
+            sentences = re.split(r"(?<=[.!?])\s+", head.strip())
+            while len(sentences) > 1 and (
+                len(" ".join(sentences)) + len(placeholder) + len(tail) + 1
+                > LIMIT
+            ):
+                sentences.pop()
+            head = " ".join(sentences).rstrip(" ,;:")
             post.text = f"{head} {placeholder}{tail}".strip()
+            if len(post.text) > LIMIT:
+                # A single sentence that still will not fit. Cut it at a
+                # word boundary rather than mid-word.
+                room = LIMIT - len(placeholder) - len(tail) - 2
+                head = head[:max(0, room)].rsplit(" ", 1)[0].rstrip(" ,;:")
+                post.text = f"{head} {placeholder}{tail}".strip()
 
     # Punctuation is mechanical, so fix it rather than regenerate for
     # it. The gate below still runs and reports anything left.

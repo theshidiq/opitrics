@@ -137,6 +137,10 @@ translation and the like count already.
   Do NOT promise a video list or a quote list, those are one click
   further on. No dashes in this post. Say it plainly, as an invitation
   to check rather than a plea to be believed.
+  Put {SOURCES_URL} at the very END of the post, with nothing after it.
+  Never a colon, comma or list after the link: on X that punctuation
+  looks like part of the address and some clients swallow it into the
+  link. Say what is on the page first, then give the link last.
 
 Voice:
 
