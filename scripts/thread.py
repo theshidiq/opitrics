@@ -24,7 +24,12 @@ from opitrics.analyze.llm import LLMClient  # noqa: E402
 from opitrics.config import settings  # noqa: E402
 from opitrics.ingest.db import Database  # noqa: E402
 from opitrics.render import cards as cards_mod  # noqa: E402
-from opitrics.render.story import ANGLES, extract_story, verify_quotes  # noqa: E402
+from opitrics.render.story import (  # noqa: E402
+    ANGLES,
+    check_rounding,
+    extract_story,
+    verify_quotes,
+)
 
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 
@@ -138,9 +143,10 @@ def build_angle(
 
     # ── verify before anything gets published ───────────────
     problems = verify_quotes(story, analysis)
+    problems += check_rounding(story, analysis, meta)
     if problems:
-        print(f"  {RED}quote check failed{RESET} "
-              f"{DIM}— not found verbatim in the corpus:{RESET}")
+        print(f"  {RED}checks failed{RESET} "
+              f"{DIM}— quote not verbatim, or a count rounded:{RESET}")
         for p in problems:
             print(f"    {RED}·{RESET} {p}")
     else:

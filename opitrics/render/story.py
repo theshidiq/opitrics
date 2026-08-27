@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 from dataclasses import dataclass
 
 from opitrics.analyze.llm import LLMClient
@@ -90,6 +91,40 @@ opinion wearing a finding's clothes, and it does not go in the thread.
 
 A sentence that cannot be false is not a finding. If a reader could not \
 disagree with it by opening the sources page, delete it.
+
+NEVER ROUND A COUNT. 15,950 is not "16,000" and not "nearly 16,000". \
+The entire claim of this account is that its numbers survive being \
+checked, and a rounded figure in an opening line is the first thing a \
+hostile reader tests. Write every count exactly as given.
+
+NEVER CHARACTERISE A COMMENTER. You know what someone wrote and how \
+many people liked it. You do not know who they are. Not "from a \
+fanboy", not "not even a buyer", not "a patriot", not "an owner" unless \
+the comment itself says so. Describe the comment, never the person \
+behind it.
+
+NO SUPERLATIVES ACROSS THE CORPUS. You are given a slice of the \
+clusters, not all of them, so you cannot know what the most-liked \
+comment in the corpus is, or the highest anything. Two threads built \
+from two slices once claimed different corpus maxima — 310 and 381 — \
+which is the one kind of error this account cannot absorb, because both \
+were published and both were checkable. Rank claims are allowed ONLY \
+within a named set you were given: "the most-liked comment in this \
+cluster", "the largest of the six themes below". Never "in the entire \
+corpus", "in 15,950 comments", "of any comment here".
+
+THE NOT-BUT TAIL. Having been told interpretation needs a number, you \
+will be tempted to keep the rhetorical clause and put the number \
+elsewhere in the post. That is not compliance. The construction \
+"X isn't A — it's B" is the tail wearing a different coat: it asserts \
+what a thing is really about, which is a claim you cannot measure. \
+Three posts in one thread used it. At most one post may, and only when \
+both halves carry their own figure.
+
+  Fails:  "The weight criticism cluster (340 comments) isn't about ride
+           quality — it's about the 1.2t battery."
+  Passes: "The weight criticism cluster runs to 340 comments. Ride
+           quality is a separate cluster of 336."
 
 SECOND TEST: could the reader have got there themselves? If the quote \
 already shows it, saying it insults them. "A backhanded compliment" \
@@ -502,4 +537,54 @@ def verify_quotes(story: Story, analysis: dict) -> list[str]:
         if any(needle in text or text.startswith(needle) for text in known):
             continue
         problems.append(f"post {post.index}: quote not found verbatim — {needle[:60]}")
+    return problems
+
+
+def check_rounding(
+    story: Story, analysis: dict, counts: dict | None = None
+) -> list[str]:
+    """Catch a corpus total written as a round number.
+
+    The prompt forbids this and the model does it anyway — "16,000
+    comments" for a corpus of 15,950 survived three regenerations with
+    an explicit rule against it. A rounded count in an opening line is
+    the first thing a hostile reader checks, and this account's whole
+    claim is that its numbers hold up, so the check cannot depend on the
+    model choosing to comply.
+
+    Only the corpus totals are checked. A cluster size the model rounds
+    would be caught by the same logic, but those are quoted exactly far
+    more reliably and the false-positive cost is higher: "300 comments"
+    is wrong for a cluster of 301, yet "about a third" is fine prose
+    about the same number.
+    """
+    totals = analysis.get("totals", {})
+    exact = {v for v in totals.values() if isinstance(v, int) and v > 999}
+    exact.add(sum(c["size"] for c in analysis["clusters"]))
+
+    # The figure the hooks actually reach for is the raw fetched count,
+    # and it is NOT in analysis.json — that carries only the clustered
+    # subset. Without `counts` the check silently passes the one number
+    # most likely to be rounded, which is how it failed the first time.
+    for value in (counts or {}).values():
+        if isinstance(value, int) and value > 999:
+            exact.add(value)
+
+    # The round neighbours of each real total, at 100 and 1000.
+    forbidden: dict[int, int] = {}
+    for n in exact:
+        for step in (100, 1000):
+            for near in (n // step * step, (n // step + 1) * step):
+                if near != n and abs(near - n) <= step:
+                    forbidden[near] = n
+
+    problems: list[str] = []
+    for post in story.posts:
+        for token in re.findall(r"\b\d[\d,]{3,}\b", post.text):
+            value = int(token.replace(",", ""))
+            if value in forbidden:
+                problems.append(
+                    f"post {post.index}: {token} is rounded — "
+                    f"the real figure is {forbidden[value]:,}"
+                )
     return problems
