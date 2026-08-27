@@ -26,6 +26,7 @@ from opitrics.ingest.db import Database  # noqa: E402
 from opitrics.render import cards as cards_mod  # noqa: E402
 from opitrics.render.story import (  # noqa: E402
     ANGLES,
+    check_dashes,
     check_number_density,
     check_quote_echo,
     check_repetition,
@@ -34,6 +35,7 @@ from opitrics.render.story import (  # noqa: E402
     check_superlatives,
     check_theme_count,
     extract_story,
+    strip_dashes,
     verify_quotes,
 )
 
@@ -166,6 +168,12 @@ def build_angle(
             head = head[: max(0, len(head) - excess)].rstrip(" ,;:—-")
             post.text = f"{head} {placeholder}{tail}".strip()
 
+    # Punctuation is mechanical, so fix it rather than regenerate for
+    # it. The gate below still runs and reports anything left.
+    removed = strip_dashes(story)
+    if removed:
+        print(f"  {DIM}em dashes rewritten in {removed} post(s){RESET}")
+
     # ── verify before anything gets published ───────────────
     problems = verify_quotes(story, analysis)
     problems += check_rounding(story, analysis, meta)
@@ -173,6 +181,7 @@ def build_angle(
     problems += check_repetition(story)
     problems += check_quote_echo(story)
     problems += check_number_density(story)
+    problems += check_dashes(story)
     problems += check_superlatives(story)
     problems += check_theme_count(story, analysis)
     if problems:
