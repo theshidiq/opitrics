@@ -55,12 +55,16 @@ quote links to the original comment on YouTube, and that the full
 analysis is published. Say it plainly and without defensiveness — it is
 an invitation to check, not a plea to be believed. Include the literal
 token {SOURCES_URL} where the link belongs. Set that post's `kind` to
-"sources".
-  Describe what is actually at that URL: the analysis — every theme,
+"sources" — that exact string, not "closer" or anything else. A thread
+whose last post is not kind "sources" ships with no link to the
+evidence, which defeats the one thing this account is for.
+  Describe what is actually at that URL: the analysis, with every theme,
   its sentiment, and a sourced comment behind each one. Do NOT promise
   a "full video list" or a list of quotes. Those live one click further
   on, at `sources.html`, and a closing post that names a thing the
   landing page does not show fails the exact check it is inviting.
+  Write this post with no dashes at all. It is the same sentence in
+  every thread, so a dash here is a dash a follower sees five times.
 
 Voice:
 
@@ -92,7 +96,8 @@ opinion wearing a finding's clothes, and it does not go in the thread.
 A sentence that cannot be false is not a finding. If a reader could not \
 disagree with it by opening the sources page, delete it.
 
-NEVER ROUND A COUNT. 15,950 is not "16,000" and not "nearly 16,000". \
+NEVER ROUND A COUNT. A corpus of 15,950 is not "16,000" and not \
+"nearly 16,000"; write whatever figure the payload gives you, exactly. \
 The entire claim of this account is that its numbers survive being \
 checked, and a rounded figure in an opening line is the first thing a \
 hostile reader tests. Write every count exactly as given.
@@ -111,7 +116,7 @@ which is the one kind of error this account cannot absorb, because both \
 were published and both were checkable. Rank claims are allowed ONLY \
 within a named set you were given: "the most-liked comment in this \
 cluster", "the largest of the six themes below". Never "in the entire \
-corpus", "in 15,950 comments", "of any comment here".
+corpus", "in all N comments", "of any comment here".
 
 THE NOT-BUT TAIL. Having been told interpretation needs a number, you \
 will be tempted to keep the rhetorical clause and put the number \
@@ -145,13 +150,15 @@ and only to report a DECISION about the analysis: what you grouped, \
 what you refused to score, which reading you did not trust. "I grouped \
 these 509 into mockery and then couldn't score them." "I'm giving you \
 the count, not a verdict." Never claim the machine's labour — not "I \
-read 16,000 comments"; a machine embedded and clustered them. True \
+read every comment"; a machine embedded and clustered them. True \
 verbs: sorted, pulled, grouped, counted, went through. Not "read". \
 Every other post has no narrator at all: the number and the quote.
 
 DASHES. You have been ending roughly one sentence per post with a dash \
-and an explanatory clause. At most ONE post in a thread may use a dash \
-in its own prose. This is not a punctuation preference: the clause \
+and an explanatory clause. At most ONE post in the whole thread may use \
+a dash in its own prose — count them before you return, and if two \
+posts have one, rewrite the weaker. A dash inside a commenter's \
+verbatim words does not count and must not be altered. This is not a punctuation preference: the clause \
 after the dash is almost always the unnumbered interpretation the tests \
 above already forbid, so when you reach for a dash, check the clause \
 against the interpretation test and you will usually find you should \
@@ -198,6 +205,12 @@ Two of these shapes contain no sentence of yours at all. Use them. And \
 use `refusal` at least once where the data supports it: a thread that \
 admits one thing it could not measure is doing what no generated thread \
 does.
+
+You may be told which quotes other threads about this car already used. \
+The card is rendered from the quote text, so reusing one puts a \
+byte-identical image in front of the same follower twice. Prefer a \
+different quote from the same cluster; the cluster is the finding, and \
+any of its quotes evidences it.
 
 Return JSON only."""
 
@@ -279,7 +292,13 @@ ANGLES: dict[str, Angle] = {
         posts=7,
         brief=(
             "Here the audience is technical, so the pipeline IS the subject. "
-            "Explain how 16,000 comments become a finding: clustering, "
+            # Was "how 16,000 comments become a finding". The corpus is
+            # 15,950, and the model copied the round number straight out
+            # of this brief for six regenerations while a rule against
+            # rounding sat in the system prompt. Never put an
+            # illustrative figure in a brief; the payload has the real
+            # ones.
+            "Explain how a corpus of comments becomes a finding: clustering, "
             "multilingual embeddings, why sarcasm breaks sentiment scoring. "
             "Be honest about what the method gets wrong. Use the car only as "
             "the worked example."
@@ -371,6 +390,8 @@ def extract_story(
     meta: dict,
     posts: int | None = None,
     angle: Angle | None = None,
+    charts_taken: set[str] | None = None,
+    quotes_taken: set[str] | None = None,
 ) -> Story:
     angle = angle or ANGLES["car"]
     posts = posts or angle.posts
@@ -392,6 +413,8 @@ def extract_story(
         },
         "clusters": scoped,
     }
+    if quotes_taken:
+        payload["quotes_already_used_in_other_threads"] = sorted(quotes_taken)
 
     instruction = (
         f"Build a {posts}-post X thread about the {display_name}.\n\n"
@@ -424,7 +447,17 @@ def extract_story(
     # is fine, and a post with no chart falls back to a stat card, which
     # is a different image. Silently keeping the duplicate is the only
     # outcome that would be wrong.
-    used_charts: set[str] = set()
+    #
+    # `charts_taken` carries the same rule ACROSS angles, which is where
+    # it was still failing: three of five threads independently reached
+    # for "aspects", so a follower saw one identical twelve-bar chart
+    # three times. Per-thread dedup could not see that, because each
+    # thread was individually correct. Charts are a shared resource
+    # across a subject's threads, not a per-thread one.
+    # Mutated in place, deliberately: the caller's set has to learn what
+    # this angle consumed, or every angle starts from the same empty
+    # slate and the cross-angle rule does nothing.
+    used_charts: set[str] = charts_taken if charts_taken is not None else set()
     for item in result.get("posts", []):
         try:
             chart = item.get("chart")
@@ -449,6 +482,15 @@ def extract_story(
             )
         except (KeyError, ValueError, TypeError):
             continue
+
+    # Tell the caller which quotes this angle consumed, so later angles
+    # can be given the list. Not enforced the way charts are: two threads
+    # sharing a quote is repetition, not a correctness failure, and
+    # dropping the quote would leave a post with nothing to show.
+    if quotes_taken is not None:
+        for post in out:
+            if post.quote_original:
+                quotes_taken.add(post.quote_original.strip())
 
     out.sort(key=lambda p: p.index)
     story = Story(
@@ -537,6 +579,28 @@ def verify_quotes(story: Story, analysis: dict) -> list[str]:
         if any(needle in text or text.startswith(needle) for text in known):
             continue
         problems.append(f"post {post.index}: quote not found verbatim — {needle[:60]}")
+    return problems
+
+
+def check_sources_post(story: Story) -> list[str]:
+    """Every thread must end on a post carrying the sources link.
+
+    One angle returned its last post as kind "closer" and shipped with
+    no link to the evidence at all. That is the worst thing a thread
+    here can do quietly: the claim is that every number is checkable,
+    and the post whose whole job is providing the destination was
+    simply absent.
+    """
+    if not story.posts:
+        return []
+    last = story.posts[-1]
+    problems: list[str] = []
+    if last.kind != "sources":
+        problems.append(
+            f"post {last.index}: last post is kind '{last.kind}', not 'sources'"
+        )
+    if "http" not in last.text and "{SOURCES_URL}" not in last.text:
+        problems.append(f"post {last.index}: final post carries no sources link")
     return problems
 
 

@@ -27,6 +27,7 @@ from opitrics.render import cards as cards_mod  # noqa: E402
 from opitrics.render.story import (  # noqa: E402
     ANGLES,
     check_rounding,
+    check_sources_post,
     extract_story,
     verify_quotes,
 )
@@ -81,6 +82,13 @@ def main() -> int:
 
     wanted = sorted(ANGLES) if args.all else [args.angle]
     failures = 0
+    # Charts are shared across a subject's threads, not per thread. Three
+    # angles independently picking "aspects" put one identical chart in
+    # front of the same follower three times, and each thread was
+    # individually correct, so only a set that outlives the loop can see
+    # it. Later angles fall back to stat cards, which differ per post.
+    charts_taken: set[str] = set()
+    quotes_taken: set[str] = set()
     for key in wanted:
         ok = build_angle(
             client=client,
@@ -93,6 +101,8 @@ def main() -> int:
             posts=args.posts,
             cards=not args.no_cards,
             sources_url=args.sources_url,
+            charts_taken=charts_taken,
+            quotes_taken=quotes_taken,
         )
         failures += 0 if ok else 1
 
@@ -115,12 +125,15 @@ def build_angle(
     posts: int | None,
     cards: bool,
     sources_url: str = "",
+    charts_taken: set[str] | None = None,
+    quotes_taken: set[str] | None = None,
 ) -> bool:
     tp = paths.thread(angle.key).ensure()
 
     print(f"\n{BOLD}── {angle.title}{RESET} {DIM}[{angle.key}]{RESET}")
     story = extract_story(
-        client, subject, display, analysis, meta, posts, angle=angle
+        client, subject, display, analysis, meta, posts,
+        angle=angle, charts_taken=charts_taken, quotes_taken=quotes_taken,
     )
     if not story.posts:
         print(f"  {YELLOW}nothing to say from this angle — skipped{RESET}")
@@ -144,9 +157,10 @@ def build_angle(
     # ── verify before anything gets published ───────────────
     problems = verify_quotes(story, analysis)
     problems += check_rounding(story, analysis, meta)
+    problems += check_sources_post(story)
     if problems:
         print(f"  {RED}checks failed{RESET} "
-              f"{DIM}— quote not verbatim, or a count rounded:{RESET}")
+              f"{DIM}(quote, count, or missing sources post):{RESET}")
         for p in problems:
             print(f"    {RED}·{RESET} {p}")
     else:
