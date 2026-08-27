@@ -232,10 +232,93 @@ falls through to Hiragino Sans, which `CLAUDE.md` records as rendering
 tofu. Latent while CJK lives in matplotlib quote cards, certain once
 every card is Japanese.
 
+### Thread voice: handing this to the pipeline
+
+Prompt-level fixes have stopped converging and this needs a code
+change, not another regeneration. I ran five rounds of prompt edits and
+got the em dash count from 39 to a floor it will not go below, which is
+the signal that the remaining instances need a deterministic gate the
+way `check_rounding()` and `check_sources_post()` already do. Those two
+work; the taste rules only mostly work.
+
+**What is actually true right now**, measured rather than assumed:
+
+- **Images are fixed.** 39 cards, 39 unique content hashes, zero
+  identical, no chart reused across threads. `charts_taken` and
+  `quotes_taken` thread through `extract_story` and are mutated in
+  place. If a duplicate is still visible, it is a stale file from an
+  earlier run, not the current build — check the timestamp before
+  re-fixing this.
+- **Dashes are at 8, of which 5 are the `quote — NN likes` separator**
+  and must not be touched. The genuine prose dashes are three:
+  `defenders/4`, `defenders/6`, `quotes/1`. My earlier counts were
+  inflated because the detection regex only stripped the separator when
+  it followed a closing bracket, so bare Japanese text before a dash
+  was miscounted as prose. Any gate written for this needs the same
+  care: **the separator form is legitimate and the count of it is not
+  the metric.**
+
+**What I suggest, in priority order:**
+
+1. **A `check_dashes()` gate**, mirroring `check_rounding()`. Strip the
+   quote and its translation from the post text first, then strip the
+   `— NN likes` separator, then count. More than one prose dash per
+   thread fails the build. This is the fix; everything else is
+   secondary.
+2. **Consider stripping prose dashes post-hoc** rather than gating.
+   Most are `X, and Y` or `X. Y` with the dash doing no work. A
+   deterministic rewrite is cheaper than another prompt round and
+   cannot regress. Gate what cannot be rewritten safely.
+3. **Do not add more prompt rules.** `STORY_SYSTEM` is now ~7,600
+   characters and the last three additions bought less than the first
+   one did. Rules are competing with each other for the model's
+   attention.
+
+**The lesson worth keeping from this, because it cost five rounds.**
+The `method` thread wrote "16,000 comments" six times for a corpus of
+15,950 while an explicit anti-rounding rule sat in the prompt. I
+treated that as the model ignoring instructions. It was not — the
+`method` angle's own brief said *"Explain how 16,000 comments become a
+finding"*, and the model was faithfully copying it. Two other places
+planted the same number, including the rule forbidding it.
+
+**Never put an illustrative figure in a brief or an example.** A
+hardcoded number outranks a rule about numbers every time. Worth
+grepping the other prompts for the same trap before it costs someone
+else the same afternoon.
+
 **Social (main assistant)** — the `quotes` thread is live on X, so the
 open questions are now the four remaining threads and how far apart
 they go, plus which of the five shorts leads and where. X is proven
 end to end; TikTok can publish today.
+
+Editorial decisions made, not yet acted on:
+
+- **`numbers` leads the shorts, then `quotes`, every other day.** Not
+  because `numbers` is the best video — `quotes` is more watchable —
+  but because a first post establishes what the account is. Lead with
+  the argument videos and the founding document is
+  car-nationalism content; lead with `numbers` and it is "we count
+  things and show our work", which can host the others later. Every
+  other day rather than daily: four videos is the whole inventory for
+  this subject, and a 48-hour gap lets the first video's retention
+  inform the second's hook.
+- **`defect` does not ship.** It narrates "Range expectations dominate
+  the chatter" for a cluster ranking **39th of 40 at n=239**, and says
+  the loudest complaint is range when the badge argument is rank 1 at
+  681. Rules 3 and 6 in one beat, and the closing card sends viewers to
+  a page that ranks every theme by count, where range sits at the
+  bottom. Needs a re-scope in `angles.py` onto "Underbody quality
+  criticism" (435, rank 8) or "Battery ground clearance risk" (359).
+- **`defenders` holds** until beats 2 and 3 are re-cut. They quote the
+  `sarcasm_risk: True` "Encouraging purchase" cluster and narrate it as
+  sincere support with a motive nobody expressed. Rule 5. Clean
+  substitute: "Hope for domestic competition" (317, +0.440, unflagged).
+
+That last one is worth carrying beyond this subject: **`check_quotes()`
+passed `defenders` because the quoted words are real. What was invented
+is the sentence around the quote.** The gate verifies quotes; nothing
+verifies narration about a quote.
 
 **The X profile is filled in** (2026-08-26) — bio, avatar, header,
 display name. A visitor arriving from the live thread now lands on a
