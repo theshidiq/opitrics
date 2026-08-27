@@ -449,8 +449,23 @@ def extract_story(
             "about_the_car": totals["car"],
             "about_video_or_arguing": totals["meta"],
             "unmapped": totals["unmapped"],
+            # The true theme count, which is NOT len(clusters) below.
+            # `clusters` is this angle's slice, and a thread reported
+            # its own slice as the total — "clustered 14,821 comments
+            # into 20 themes" when there are 40. Not an invention: it
+            # counted what it could see, which is the most plausible
+            # kind of wrong and the least likely to be spotted, since
+            # the sources page it links lists all 40. The model cannot
+            # be accurate about a number it was never given.
+            "themes_total": len(analysis["clusters"]),
         },
         "clusters": scoped,
+        "note_on_clusters": (
+            f"You are shown {len(scoped)} of {len(analysis['clusters'])} "
+            "themes — the slice this angle may draw on. When stating how "
+            "many themes the analysis found, use corpus.themes_total, "
+            "never the length of this list."
+        ),
     }
     if quotes_taken:
         payload["quotes_already_used_in_other_threads"] = sorted(quotes_taken)
@@ -475,6 +490,40 @@ def extract_story(
 
     log.info("extracting story for %s (angle: %s)…", subject, angle.key)
     result = client._chat(STORY_SYSTEM, instruction, max_tokens=6000)
+
+    # Repetition survives being asked nicely. Told once in the prompt not
+    # to restate a figure, four of five threads did it anyway, and a
+    # plain regeneration produced a different repeat rather than none —
+    # the model has no memory of the last attempt, so the second roll is
+    # no likelier than the first.
+    #
+    # Naming the offending figures back is what changes the odds, the
+    # way the fabricated-quote retry does in `scripts/shorts.py`. Two
+    # extra attempts, then accept: the caller still runs
+    # `check_repetition()` and surfaces whatever is left, and a repeated
+    # number is a readability fault rather than a correctness one, so
+    # failing the build over it would be the wrong trade.
+    for attempt in range(2):
+        repeats = _repeated_figures(result)
+        if not repeats:
+            break
+        listed = "; ".join(
+            f"{fig} appears in posts {', '.join(map(str, idx))}"
+            for fig, idx in repeats
+        )
+        log.info("  repeated figure(s), rewrite %d: %s", attempt + 1, listed)
+        result = client._chat(
+            STORY_SYSTEM,
+            instruction
+            + "\n\nYour previous attempt repeated a figure across posts: "
+            + listed
+            + ".\nRewrite the thread. Each of those figures may appear "
+            "ONCE. Where a later post needs to refer back, name the thing "
+            "instead of the number — 'that cluster', 'the one I couldn't "
+            "score'. Every other rule still applies; do not fix this by "
+            "dropping a post or by rounding.",
+            max_tokens=6000,
+        )
 
     out: list[ThreadPost] = []
     # Each chart may be used once per thread. The prompt says so, and the
@@ -619,6 +668,111 @@ def verify_quotes(story: Story, analysis: dict) -> list[str]:
             continue
         problems.append(f"post {post.index}: quote not found verbatim — {needle[:60]}")
     return problems
+
+
+CORPUS_SUPERLATIVE = re.compile(
+    r"\b(?:the\s+)?(?:most[- ]liked|highest|biggest|largest|top)\b[^.?!]{0,60}?"
+    r"\b(?:in|of|across)\s+(?:the\s+)?"
+    r"(?:entire\s+|whole\s+|full\s+)?"
+    r"(?:corpus|dataset|data\s?set|thread|comment\s?section|all\s+\d)",
+    re.I,
+)
+
+
+THEME_COUNT = re.compile(
+    r"\b(?:into\s+|as\s+)?(\d{1,3})\s+(?:themes?|clusters?|groups?)\b", re.I
+)
+
+
+def check_theme_count(story: Story, analysis: dict) -> list[str]:
+    """Catch a thread reporting its own slice as the corpus total.
+
+    Each angle is handed a scoped subset of the clusters, and one thread
+    wrote "clustered 14,821 comments into 20 themes" when the analysis
+    holds 40. The number is not invented — it is the size of what the
+    model could see — which makes it the most plausible kind of wrong
+    and the least likely to be noticed, since the sources page it points
+    at lists every one of the 40.
+    """
+    total = len(analysis.get("clusters", []))
+    if not total:
+        return []
+    problems: list[str] = []
+    for post in story.posts:
+        for match in THEME_COUNT.finditer(post.text):
+            claimed = int(match.group(1))
+            # Small numbers are usually a real subset being described
+            # ("two clusters, 885 comments"), not a total.
+            if claimed >= 10 and claimed != total:
+                problems.append(
+                    f"post {post.index}: says {claimed} themes, the "
+                    f"analysis has {total}"
+                )
+    return problems
+
+
+def check_superlatives(story: Story) -> list[str]:
+    """Catch a rank claim scoped to the whole corpus.
+
+    The model is given a slice of the clusters, never all of them, so it
+    cannot know what the most-liked comment in the corpus is. It says so
+    anyway: one thread announced "the most-liked comment in the entire
+    corpus? 310 likes" two posts after quoting a 381-like comment from
+    the same slice — wrong, and checkable from the thread alone without
+    opening anything.
+
+    STATUS.md records two threads once publishing different corpus
+    maxima, 310 and 381, both checkable. That is the error class this
+    account cannot absorb, and a prompt rule has now failed to stop it
+    twice.
+
+    Rank claims inside a named set stay legal: "the most-liked comment
+    in this cluster" is something the payload can support. Only the
+    unbounded scope is caught.
+    """
+    problems: list[str] = []
+    for post in story.posts:
+        text = post.text
+        for quoted in (post.quote_original, post.quote_english):
+            if quoted:
+                text = text.replace(quoted, " ")
+        found = CORPUS_SUPERLATIVE.search(text)
+        if found:
+            problems.append(
+                f"post {post.index}: \"{found.group(0)[:60]}\" claims a rank "
+                "across the whole corpus — you were given a slice. Scope it "
+                "to a named cluster or cut it"
+            )
+    return problems
+
+
+def _repeated_figures(result: dict) -> list[tuple[str, list[int]]]:
+    """Figures the model used in more than one post, from a raw response.
+
+    Same rule as `check_repetition()` but reading the LLM's own JSON, so
+    the retry can name them before anything is parsed into a `Story`.
+    The two must agree — if this misses what the gate catches, the
+    retry cannot fix what the build then reports.
+    """
+    import re
+    from collections import defaultdict
+
+    posts = result.get("posts", [])
+    seen: dict[str, list[int]] = defaultdict(list)
+    body = posts[:-1] if len(posts) > 1 else posts
+    for item in body:
+        text = str(item.get("text", ""))
+        for quoted in (item.get("quote_original"), item.get("quote_english")):
+            if quoted:
+                text = text.replace(str(quoted), " ")
+        try:
+            index = int(item.get("index", 0))
+        except (TypeError, ValueError):
+            continue
+        for figure in set(re.findall(r"\b\d{1,3}(?:,\d{3})+\b|\b\d{3,}\b",
+                                     text)):
+            seen[figure].append(index)
+    return [(f, sorted(i)) for f, i in sorted(seen.items()) if len(i) > 1]
 
 
 def check_repetition(story: Story) -> list[str]:

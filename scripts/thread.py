@@ -29,6 +29,8 @@ from opitrics.render.story import (  # noqa: E402
     check_repetition,
     check_rounding,
     check_sources_post,
+    check_superlatives,
+    check_theme_count,
     extract_story,
     verify_quotes,
 )
@@ -160,6 +162,8 @@ def build_angle(
     problems += check_rounding(story, analysis, meta)
     problems += check_sources_post(story)
     problems += check_repetition(story)
+    problems += check_superlatives(story)
+    problems += check_theme_count(story, analysis)
     if problems:
         print(f"  {RED}checks failed{RESET} "
               f"{DIM}(quote, count, or missing sources post):{RESET}")
