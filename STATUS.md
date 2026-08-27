@@ -9,8 +9,8 @@ record of *decisions*. This file is the record of *state* — what is
 done, what is blocked, and on whom. If something here stops being
 state and becomes a decision, move it there and drop it from here.
 
-Last updated 2026-08-26 (domain live, report published, threads and
-shorts rebuilt against the live URL).
+Last updated 2026-08-27 (first thread live on X; disk state audited
+against what was actually published).
 
 ## Accounts
 
@@ -24,7 +24,21 @@ shorts rebuilt against the live URL).
 **First publication: the `quotes` thread, X, 2026-08-26.**
 `x.com/opitrics/status/2092531936271245540` — 10 posts, one card each,
 receipt complete with no errors. Nothing has been posted anywhere else.
-No bios or assets pasted in yet; `brand/PROFILE.md` has all of it ready.
+
+**The live thread is not the one on disk.** `quotes/thread.json` was
+regenerated after publishing, and the two share no posts — 0 of 10
+identical. Anything measured against the current files describes a
+draft, not what the public sees. `posted.json` stores the text of every
+post that actually went out; that is the only record of the live thread,
+since the app cannot read from X.
+
+Audited against the receipt rather than the disk: **no rounded counts,
+no corpus superlatives, quotes verified before posting.** What is live
+is accurate. It is written in the older voice — four posts open with an
+award-ceremony phrase ("A voice of reason:", "The funniest jab:",
+"Skeptics smell astroturfing:") that `STORY_SYSTEM` now forbids, and it
+carries 11 em dashes. A style gap, not a correction-worthy one. Do not
+delete and repost over voice; the archive is more valuable intact.
 
 Three things that only the first live post could settle:
 
@@ -249,14 +263,23 @@ work; the taste rules only mostly work.
   place. If a duplicate is still visible, it is a stale file from an
   earlier run, not the current build — check the timestamp before
   re-fixing this.
-- **Dashes are at 8, of which 5 are the `quote — NN likes` separator**
-  and must not be touched. The genuine prose dashes are three:
-  `defenders/4`, `defenders/6`, `quotes/1`. My earlier counts were
-  inflated because the detection regex only stripped the separator when
-  it followed a closing bracket, so bare Japanese text before a dash
-  was miscounted as prose. Any gate written for this needs the same
-  care: **the separator form is legitimate and the count of it is not
-  the metric.**
+- **Dashes: 19 total, 14 separator, 5 prose** as measured 2026-08-27
+  after the latest rebuild — not the 8/5/3 recorded earlier, which was
+  a different build. The prose five are `defenders/4`, `defenders/6`,
+  `method/4`, `quotes/1`, `quotes/3`.
+
+  Two of those are an artefact worth knowing about before writing the
+  gate. `method/4` and `quotes/3` read as `「」 — NN likes` once the
+  quote is stripped: removing the quote text orphans its separator, and
+  a naive counter then reads the orphan as prose. So the trap runs both
+  ways — the earlier undercount stripped too little, this one strips too
+  much. **Strip the separator by pattern (`—\\s*[\\d,]+\\s*likes`), not
+  by what precedes it.**
+
+  `quotes/3` is the one to look at first regardless of dashes: "isn't
+  ride quality — it's the 1.2t weight" is the not-but tail the prompt
+  explicitly forbids, so at least one prose dash is a symptom rather
+  than the disease.
 
 **What I suggest, in priority order:**
 
@@ -308,8 +331,11 @@ Editorial decisions made, not yet acted on:
   the loudest complaint is range when the badge argument is rank 1 at
   681. Rules 3 and 6 in one beat, and the closing card sends viewers to
   a page that ranks every theme by count, where range sits at the
-  bottom. Needs a re-scope in `angles.py` onto "Underbody quality
-  criticism" (435, rank 8) or "Battery ground clearance risk" (359).
+  bottom. Needs a re-scope in `angles.py` — but **not onto "Underbody
+  quality criticism"**, suggested earlier and since checked: it is
+  `sarcasm_risk: True`, so it walks straight into the rule 5 problem
+  that is holding `defenders`. "Battery ground clearance risk" (359,
+  rank 20, −0.504, unflagged) is the clean one.
 - **`defenders` holds** until beats 2 and 3 are re-cut. They quote the
   `sarcasm_risk: True` "Encouraging purchase" cluster and narrate it as
   sincere support with a motive nobody expressed. Rule 5. Clean
@@ -330,25 +356,13 @@ header is 3:1 where YouTube's visible strip is 6:1, so the older
 from the same master; the text block is centred precisely so one render
 survives both ratios.
 
-Two shorts cannot ship as rendered, found by checking the scripts
-against `analysis.json`:
-
-- **`defect` is disqualified.** It narrates "Range expectations dominate
-  the chatter" — but "Real-world range expectations" is **rank 39 of
-  40, n=239**, the second-smallest cluster in the corpus. Beat 2 also
-  says the loudest complaint is range rather than the badge, inverting
-  the finding: the badge argument is rank 1 at 681. Rules 3 and 6 in one
-  beat, and the video's own closing card sends viewers to a page that
-  now ranks every theme by count. Fix is a re-scope in `angles.py` onto
-  "Underbody quality criticism" (435, rank 8) or "Battery ground
-  clearance risk" (359) — pipeline work, not a narration edit.
-- **`defenders` holds** until beats 2 and 3 are re-cut. They quote the
-  "Encouraging purchase" cluster, which is `sarcasm_risk: True`, and
-  narrate it as sincere support with a motive nobody expressed
-  ("He's not even a buyer. He just wants to see it happen"). The actual
-  comment is 「そこまで惚れたなら買えば良いじゃん!」 — needling the
-  reviewer. Rule 5. Clean substitute: "Hope for domestic competition"
-  (317, +0.440, unflagged).
+The two blocked shorts are listed under Social above. Two details that
+belong with them and are not repeated there: `defect`'s beat 2 inverts
+the finding outright — it says the loudest complaint is range when the
+badge argument is rank 1 at 681 — and `defenders` narrates
+「そこまで惚れたなら買えば良いじゃん!」, which is needling the reviewer,
+as "He's not even a buyer. He just wants to see it happen". A motive
+nobody expressed, attached to a sarcasm-flagged cluster.
 
 Worth recording as a gap rather than a bug: `check_quotes()` passed
 `defenders` because the quoted words are real. What is fabricated is the
