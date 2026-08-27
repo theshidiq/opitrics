@@ -36,6 +36,22 @@ You are not presenting findings. You are telling somebody what you \
 found in a comment section, the way you would tell a friend who would \
 find it funny or infuriating. Everything below serves that.
 
+AND YOU WERE SURPRISED BY IT. This is the part that keeps going \
+missing. You spent hours in this comment section. You expected one \
+thing and found another. Something in there made you laugh, or made \
+your eyebrows go up, or was so strange you had to read it twice.
+
+That reaction is the thread. Not decoration on top of the findings — \
+the actual reason a stranger reads past post one. A reader can feel \
+whether the person writing found this interesting, and if you did not, \
+they will not either.
+
+So write from inside it: what you went in expecting, the moment it \
+turned out to be something else, the comment you could not believe \
+somebody typed. Curiosity is contagious and so is boredom. Every rule \
+below is a constraint on being WRONG. None of them is permission to be \
+dull, and a thread that is accurate and lifeless has failed.
+
 WHAT THE THREAD IS FOR. It has to be read and replied to. Accuracy is \
 the constraint, not the goal — a thread nobody finishes is worth \
 nothing however defensible each line is. Give the reader something to \
@@ -251,29 +267,48 @@ image already shows the numbers. A quote card renders the original \
 text, its translation and its like count. A stat card renders the \
 headline figure at enormous size. A chart card renders the chart.
 
-So your text must not repeat what the reader is looking at. This is \
-the single biggest reason these threads read like a report rather than \
-something a person wrote:
+THE CARD IS THE DATA. YOUR TEXT IS THE NARRATION.
+
+That is the whole division and it is not "write a caption". A caption \
+labels a picture. Narration is a person talking you through something \
+they found, and it is the reason anyone looks at the picture at all.
 
   Card shows:  22%  ·  "not about the car at all"
-  Post said:   "3,205 of 14,821 comments on the BYD Racco video are
-                people arguing with each other. That's 21.6%."
-  Post should: "They're not arguing about the car. They're arguing
-                about each other."
 
-  Card shows:  the Japanese comment, its English, 14 likes
-  Post said:   "430 comments are nationalist arguments. One Japanese
-                user: [the same Japanese text]" (14 likes)
-  Post should: "One side thinks this isn't about a car at all."
+  Caption (wrong, and lifeless):
+    "They're not arguing about the car. They're arguing about
+     each other."
 
-Never paste a quote into the post text when the card is showing it. \
-Never restate a figure the card displays. Write the sentence that makes \
-someone look at the image, or the one that lands after they have.
+  Narration (right):
+    "I went in expecting a fight about the price. Nobody is arguing
+     about the price. A fifth of that comment section is people
+     going at each other, and the car is just where it happens."
 
-You still may not invent. Everything you write is still bounded by the \
-payload — you are choosing which true thing to say, not inventing a \
-new one. A post with no figure in it is fine when the card has the \
-figure. A post with a CLAIM that no figure supports is not.
+  Card shows:  a Japanese comment about territorial waters, 14 likes
+
+  Caption (wrong):
+    "One side thinks this isn't about a car at all."
+
+  Narration (right):
+    "Someone brings up territorial waters. Live-fire exercises.
+     Under a review of a tiny electric van. And fourteen people
+     agreed with him."
+
+The right-hand versions are LONGER. Shortness was never the goal — the \
+goal is that a person is present. Say what you expected, what you \
+actually found, what surprised you, what you could not believe someone \
+had written. Those are all true things you can say without a figure, \
+because the figure is on the card.
+
+Never re-type a quote or a figure the card is displaying. But do not \
+mistake that for saying less. Say the thing the card CANNOT: why it is \
+strange, what it felt like to find it, what it means that this many \
+people agreed.
+
+You still may not invent. Everything is bounded by the payload — you \
+are choosing which true thing to say, and how it felt to find it, not \
+inventing a new fact. "I did not expect this" is honest. "This proves \
+Japanese buyers are worried" is a claim and needs a number.
 
 POST SHAPES. Ten posts of identical construction read as machine \
 output however well each one is written, and the repeating shape here \
@@ -282,31 +317,33 @@ from one of the shapes below. Use no shape more than twice in a thread, \
 and never twice in a row.
 
 Shapes marked (card) put the quote in `quote_original`, NOT in the post \
-text. The post text is the short line beside the image.
+text. Your text is what you say while showing it to someone.
 
-  react (card)   one line reacting to what the card shows. Six words is
-                 fine. "This one got 381 likes." is not — the card says
-                 that. "Somebody actually said this out loud." is.
-  setup (card)   one line that makes the reader look. "Then a Japanese
-                 owner replied." "Here is the other side."
-  pair  (card)   two opposing clusters, one line naming the split, no
-                 verdict from you on who is right.
-  scale (card)   the one figure the card does NOT show, as its own short
-                 sentence. If the card shows a quote, the scale is how
-                 many comments sit behind it.
-  refusal        something you could not measure, and why. A
-                 sarcasm-flagged cluster, thin data, a polarity you do
-                 not trust. This one is your own voice, not a caption.
-  turn           a single line that changes direction. "It gets worse."
-                 "Nobody is arguing about the car." No figure needed.
+  react (card)   your actual reaction to what the card shows. Not a
+                 label for it. "I read this one three times to check I
+                 had it right." "Fourteen people agreed with him."
+  setup (card)   what makes the reader look before they look. "Then
+                 somebody from Japan replied, and it stops being about
+                 the car entirely."
+  pair  (card)   two sides, and the fact that they are answering each
+                 other. Name what each thinks the argument is about.
+                 No verdict from you on who is right.
+  scale (card)   one person, then how many people are behind them — or
+                 the reverse. The figure the card does NOT show.
+  refusal        something you could not measure, and why, in your own
+                 voice. "I gave up scoring this one. You read a comment
+                 and genuinely cannot tell if they love it or they are
+                 taking the piss."
+  turn           the line where the story changes. "That is not the
+                 strange part." "Then it stops being about the car."
 
 Use `refusal` at least once where the data supports it: a thread that \
-admits one thing it could not measure is doing what no generated thread \
-does. Use `turn` to break a run of card posts.
+admits what it could not measure is doing what no generated thread \
+does, and it is the most human post available to you.
 
-Post length is a tool. A four-word post between two long ones is a beat, \
-and it is the thing that makes a thread feel written rather than \
-generated. At least two posts in a thread should be under fifteen words.
+Vary the length. A short post between two long ones is a beat. But a \
+thread of nothing but short posts is not punchy, it is empty — the \
+posts that carry the story need room to tell it.
 
 You may be told which quotes other threads about this car already used. \
 The card is rendered from the quote text, so reusing one puts a \
@@ -806,6 +843,39 @@ def check_superlatives(story: Story) -> list[str]:
                 "across the whole corpus — you were given a slice. Scope it "
                 "to a named cluster or cut it"
             )
+    return problems
+
+
+def check_quote_echo(story: Story) -> list[str]:
+    """Catch a post that re-types the quote its own card is showing.
+
+    The card renders the original, the translation and the like count.
+    A post that also pastes the words puts them on screen twice, which
+    is the thing that made these read like a report rather than
+    narration — the text stops being a person talking and becomes a
+    transcript of the image beside it.
+
+    Matched on a run of words rather than the whole string, since the
+    post legitimately shortens a long comment. Short quotes are skipped:
+    a four-word comment can appear in a sentence by coincidence.
+    """
+    problems: list[str] = []
+    for post in story.posts:
+        body = re.sub(r"[^a-z0-9 ]+", " ", post.text.lower())
+        for quoted in (post.quote_english, post.quote_original):
+            if not quoted:
+                continue
+            words = re.sub(r"[^a-z0-9 ]+", " ", quoted.lower()).split()
+            if len(words) < 6:
+                continue
+            span = 6
+            if any(" ".join(words[i:i + span]) in body
+                   for i in range(len(words) - span + 1)):
+                problems.append(
+                    f"post {post.index}: the post re-types the quote its "
+                    "card already shows — say what it means, not what it says"
+                )
+                break
     return problems
 
 
