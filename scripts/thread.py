@@ -26,6 +26,7 @@ from opitrics.ingest.db import Database  # noqa: E402
 from opitrics.render import cards as cards_mod  # noqa: E402
 from opitrics.render.story import (  # noqa: E402
     ANGLES,
+    check_repetition,
     check_rounding,
     check_sources_post,
     extract_story,
@@ -158,6 +159,7 @@ def build_angle(
     problems = verify_quotes(story, analysis)
     problems += check_rounding(story, analysis, meta)
     problems += check_sources_post(story)
+    problems += check_repetition(story)
     if problems:
         print(f"  {RED}checks failed{RESET} "
               f"{DIM}(quote, count, or missing sources post):{RESET}")
