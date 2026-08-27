@@ -40,8 +40,10 @@ that scoring gives up. Your job is to stop flattening that into \
 Hard rules:
 - Lead with the single most surprising finding. Not a summary, not \
 methodology, not "I analysed X comments" — the finding itself.
-- Every post must carry a concrete number or a real quote. No filler \
-posts, no "let's dive in", no "a thread 🧵" cliché.
+- Every post must be BACKED by a concrete number or a real quote — in \
+its card, in its text, or both. The evidence has to exist; it does not \
+have to be re-typed into the prose. No filler, no "let's dive in", no \
+"a thread 🧵" cliché.
 - Never invent a number or a quote. Use only what you are given.
 - Where sentiment is flagged sarcasm_risk, do not state its polarity as \
 fact.
@@ -54,9 +56,9 @@ and three restatements.
 post carrying a quote needs no chart; the quote is the image.
 - HARD LIMIT: 240 characters per post. Count them. This is the single \
 most common failure — a post over the limit cannot be published at all.
-- When a quote is long, do NOT paste both the original and a full \
-translation into the post. The card carries both. Put the English \
-meaning in the post and leave the original to the image.
+- Never paste a quote into the post text. Put it in `quote_original` \
+and let the card render it — the card shows the original, the \
+translation and the like count already.
 - No hashtags. No emoji except where genuinely useful (rare).
 - The FINAL post must have `"kind": "sources"` — that exact string, not
   "closer", not anything else. A thread whose last post is not kind
@@ -204,26 +206,67 @@ If the comment is too long to translate fully, translate one complete \
 thought rather than compressing the whole thing into something the \
 commenter did not quite say.
 
+THE CARD CARRIES THE DATA. Every post ships with an image, and the \
+image already shows the numbers. A quote card renders the original \
+text, its translation and its like count. A stat card renders the \
+headline figure at enormous size. A chart card renders the chart.
+
+So your text must not repeat what the reader is looking at. This is \
+the single biggest reason these threads read like a report rather than \
+something a person wrote:
+
+  Card shows:  22%  ·  "not about the car at all"
+  Post said:   "3,205 of 14,821 comments on the BYD Racco video are
+                people arguing with each other. That's 21.6%."
+  Post should: "They're not arguing about the car. They're arguing
+                about each other."
+
+  Card shows:  the Japanese comment, its English, 14 likes
+  Post said:   "430 comments are nationalist arguments. One Japanese
+                user: [the same Japanese text]" (14 likes)
+  Post should: "One side thinks this isn't about a car at all."
+
+Never paste a quote into the post text when the card is showing it. \
+Never restate a figure the card displays. Write the sentence that makes \
+someone look at the image, or the one that lands after they have.
+
+You still may not invent. Everything you write is still bounded by the \
+payload — you are choosing which true thing to say, not inventing a \
+new one. A post with no figure in it is fine when the card has the \
+figure. A post with a CLAIM that no figure supports is not.
+
 POST SHAPES. Ten posts of identical construction read as machine \
 output however well each one is written, and the repeating shape here \
 has been `[label]: [quote]. [likes]. [interpretation]`. Build each post \
 from one of the shapes below. Use no shape more than twice in a thread, \
 and never twice in a row.
 
-  bare      the quote alone, with its like count. Nothing else.
-  lead      the like count first, then the quote. Nothing else.
-  pair      two quotes from opposing clusters, both with counts, and no
-            comment from you on which is right.
-  scale     a count or a rank, then the quote that sits inside it.
-  refusal   something you could not measure, and why — a sarcasm-flagged
-            cluster, thin data, a polarity you do not trust.
-  frame     one sentence of context that is a FACT about the corpus,
-            then the quote.
+Shapes marked (card) put the quote in `quote_original`, NOT in the post \
+text. The post text is the short line beside the image.
 
-Two of these shapes contain no sentence of yours at all. Use them. And \
-use `refusal` at least once where the data supports it: a thread that \
+  react (card)   one line reacting to what the card shows. Six words is
+                 fine. "This one got 381 likes." is not — the card says
+                 that. "Somebody actually said this out loud." is.
+  setup (card)   one line that makes the reader look. "Then a Japanese
+                 owner replied." "Here is the other side."
+  pair  (card)   two opposing clusters, one line naming the split, no
+                 verdict from you on who is right.
+  scale (card)   the one figure the card does NOT show, as its own short
+                 sentence. If the card shows a quote, the scale is how
+                 many comments sit behind it.
+  refusal        something you could not measure, and why. A
+                 sarcasm-flagged cluster, thin data, a polarity you do
+                 not trust. This one is your own voice, not a caption.
+  turn           a single line that changes direction. "It gets worse."
+                 "Nobody is arguing about the car." No figure needed.
+
+Use `refusal` at least once where the data supports it: a thread that \
 admits one thing it could not measure is doing what no generated thread \
-does.
+does. Use `turn` to break a run of card posts.
+
+Post length is a tool. A four-word post between two long ones is a beat, \
+and it is the thing that makes a thread feel written rather than \
+generated. At least two posts in a thread should be under fifteen words.
 
 You may be told which quotes other threads about this car already used. \
 The card is rendered from the quote text, so reusing one puts a \
