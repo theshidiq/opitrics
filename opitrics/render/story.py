@@ -134,14 +134,19 @@ You are one person who did this work, not a publication and not a \
 narrator. That person is not showing off, and is not explaining the \
 material to someone slower than them.
 
-THE CLAIM TEST. Every CLAIM about the data must carry a figure from \
-the payload — a count, a rank, a percentage, a polarity. A claim with \
-no figure behind it is your opinion wearing a finding's clothes.
+THE CLAIM TEST. Every CLAIM about the data must be BACKED by a figure \
+from the payload — a count, a rank, a percentage, a polarity. A claim \
+with nothing behind it is your opinion wearing a finding's clothes.
+
+Backed, not necessarily stated. The figure can sit on the card while \
+the post says "hundreds of people". What is forbidden is the claim with \
+no measurement anywhere behind it, in any form.
 
   Fails:  "The origin issue is the single biggest barrier, louder than
            any spec complaint."
-  Passes: "456 people said that. The biggest complaint about the car
-           itself got 269."
+  Passes: "Far more people are arguing about where it was built than
+           about anything on the spec sheet." (the counts are on the
+           card; the comparison is real and measured)
 
   Fails:  "But it's drowned out by the nationalist chorus."
   Passes: nothing. Cut it. You have no measurement of relative volume
@@ -177,8 +182,14 @@ The distinction is whether a reader could open the sources page and \
 disagree with you. Framing they cannot check because it asserts \
 nothing is fine. A claim they cannot check is not.
 
-NEVER ROUND A COUNT. Write every figure exactly as the payload gives \
-it. 15,950 is not "16,000" or "nearly 16,000".
+NEVER ROUND A COUNT INTO ANOTHER COUNT. If you write a figure, write \
+it exactly: 15,950 is not "16,000" and not "nearly 16,000". A rounded \
+digit is the first thing a hostile reader checks, and it is wrong.
+
+This is not in tension with saying quantities in words. "A fifth of \
+them" is a description and cannot be wrong in the same way; "16,000 \
+comments" is a count, and it is false. Either say it in plain words or \
+say the exact figure — never a rounded one.
 
 NEVER CHARACTERISE A COMMENTER. You know what someone wrote and how \
 many people liked it. You do not know who they are. Not "from a \
@@ -304,6 +315,43 @@ Never re-type a quote or a figure the card is displaying. But do not \
 mistake that for saying less. Say the thing the card CANNOT: why it is \
 strange, what it felt like to find it, what it means that this many \
 people agreed.
+
+SAY QUANTITIES THE WAY A PERSON SAYS THEM. The card carries the exact \
+figure. In your prose, use the words someone would actually use out \
+loud. A reader scrolling will not divide 3,205 by 15,950 to work out \
+how much that is — they will feel nothing and keep scrolling.
+
+  Instead of              write
+  3,205 of 15,950         a fifth of them
+  590 comments            hundreds of people
+  681 of 14,821           the single biggest thing in there
+  polarity -0.53          people are angry about it
+  377 comments accuse     hundreds of people think it is rigged
+  144 likes agreed        a hundred-odd people agreed
+
+Exact figures are still allowed where the figure IS the surprise — \
+"1.2 tonnes in a kei car" lands because the number is absurd, and \
+"fourteen people liked that" lands because it is so few. Ask whether \
+the digit does work a phrase could not. If not, use the phrase.
+
+Never put two numbers in one sentence for the reader to compare. That \
+is a calculation, and calculation is the opposite of the feeling you \
+want. Do the arithmetic yourself and say the result in words.
+
+AT MOST TWO POSTS IN THE WHOLE THREAD may contain a figure over 100. \
+Count them before you return. This is a hard budget, not a preference, \
+because the failure is always the same: post 1 comes out in plain \
+language and then posts 2 through 6 revert to "530 comments... with 381 \
+likes... 478 comments... 109 people liked". Every post after the first \
+is subject to this rule exactly as much as the first one is.
+
+  Reverting:  "530 comments are about Japan's car industry falling
+               behind. The most-liked one, with 381 likes, is a viewer
+               admitting the quality is scary."
+  Holding:    "Hundreds of them are worried about Japan's own car
+               industry. The one that got the most agreement is a
+               Japanese viewer admitting the quality is scary, and that
+               pretending otherwise would not be fair."
 
 You still may not invent. Everything is bounded by the payload — you \
 are choosing which true thing to say, and how it felt to find it, not \
@@ -844,6 +892,44 @@ def check_superlatives(story: Story) -> list[str]:
                 "to a named cluster or cut it"
             )
     return problems
+
+
+def check_number_density(story: Story, budget: int = 2) -> list[str]:
+    """Catch a thread that reverts to reciting counts.
+
+    The card carries the exact figure, so prose can say "a fifth of
+    them" or "hundreds of people" — which is what a reader scrolling
+    actually feels. Nobody divides 3,205 by 15,950 mid-scroll.
+
+    The failure is consistent enough to be worth a gate rather than a
+    rule: post 1 comes out in plain language and posts 2 onward revert
+    to "530 comments... 381 likes... 478 comments". Asking the model to
+    budget itself does not hold, because it writes each post without
+    counting the ones before.
+
+    Figures inside a quote do not count — a commenter writing 1200kg is
+    not the narrator reciting a statistic. The closing sources post is
+    exempt; it names the theme total by design.
+    """
+    body = story.posts[:-1] if len(story.posts) > 1 else story.posts
+    offenders: list[int] = []
+    for post in body:
+        text = post.text
+        for quoted in (post.quote_original, post.quote_english):
+            if quoted:
+                text = text.replace(quoted, " ")
+        # Over 100 only: small counts like "fourteen people" are the
+        # kind of figure that lands, and spelled-out numbers are prose.
+        if any(int(t.replace(",", "")) > 100
+               for t in re.findall(r"\b\d[\d,]*\b", text)):
+            offenders.append(post.index)
+    if len(offenders) > budget:
+        return [
+            f"posts {', '.join(map(str, offenders))} all recite a figure — "
+            f"at most {budget} should. Say the rest in words: 'a fifth of "
+            "them', 'hundreds of people'. The card has the number"
+        ]
+    return []
 
 
 def check_quote_echo(story: Story) -> list[str]:
