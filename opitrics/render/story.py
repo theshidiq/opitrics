@@ -481,6 +481,30 @@ ANGLES: dict[str, Angle] = {
             "nobody else covers, so make the surprise explicit."
         ),
     ),
+    "who": Angle(
+        key="who",
+        title="Who is actually talking",
+        scope="all",
+        posts=7,
+        brief=(
+            "The framing is 'what are Japanese people saying about this "
+            "Chinese car', because that is what this corpus literally is: "
+            "the overwhelming majority of the reaction is written in "
+            "Japanese, on Japanese motoring channels, about a car from "
+            "China. No other angle says that out loud, and it is the first "
+            "thing an outsider would want to know.\n\n"
+            "So the through-line is the reaction of one market to another "
+            "market's product. Lead on who is doing the talking, then what "
+            "they are worried about, admiring, or refusing to admit. The "
+            "Japanese-industry-decline material and the reluctant-praise "
+            "material both belong here.\n\n"
+            "Two things you must not do. Do not treat the language of a "
+            "comment as the nationality of its author: say 'written in "
+            "Japanese', not 'Japanese buyers'. And do not imply any of this "
+            "predicts sales — these are people watching a video, not people "
+            "in a showroom."
+        ),
+    ),
     "quotes": Angle(
         key="quotes",
         title="Just the comments",
@@ -627,6 +651,13 @@ def extract_story(
             # the sources page it links lists all 40. The model cannot
             # be accurate about a number it was never given.
             "themes_total": len(analysis["clusters"]),
+            # Who is doing the talking, by the script they wrote in. The
+            # "who" angle is built on this and nothing else carries it.
+            # Counted from the comment text, so it is the language of
+            # the comment and NOT the nationality of the author, which
+            # is a distinction the angle brief repeats.
+            **({"written_in": meta["languages"]} if meta.get("languages")
+               else {}),
         },
         "clusters": scoped,
         "note_on_clusters": (

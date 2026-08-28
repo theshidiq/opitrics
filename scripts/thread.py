@@ -53,6 +53,37 @@ RESET = "\033[0m"
 LIMIT = 280
 
 
+def _language_split(comments) -> dict[str, int]:
+    """Count comments by the script they were written in.
+
+    This is the language of the COMMENT, never the nationality of the
+    person. Someone writing in Japanese is probably in Japan and might
+    not be, and the difference matters on an account that publishes
+    claims about who is saying what.
+
+    Kana before han, because han alone matches both Japanese and
+    Chinese: a comment containing kana is Japanese, one with han and no
+    kana is almost always Chinese. Imperfect at the margin and honest
+    about being a script count rather than a language model.
+    """
+    kana = re.compile(r"[぀-ヿ]")
+    han = re.compile(r"[一-鿿]")
+    latin = re.compile(r"[A-Za-z]")
+
+    counts = {"japanese": 0, "chinese": 0, "latin_script": 0, "other": 0}
+    for row in comments:
+        text = row["text"] or ""
+        if kana.search(text):
+            counts["japanese"] += 1
+        elif han.search(text):
+            counts["chinese"] += 1
+        elif latin.search(text):
+            counts["latin_script"] += 1
+        else:
+            counts["other"] += 1
+    return counts
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--subject", required=True)
@@ -78,9 +109,11 @@ def main() -> int:
     display = args.name or args.subject.replace("-", " ").title()
 
     db = Database(settings.database_path)
+    comments = db.comments_for_subject(args.subject)
     meta = {
-        "raw": len(db.comments_for_subject(args.subject)),
+        "raw": len(comments),
         "videos": len(db.videos_for_subject(args.subject)),
+        "languages": _language_split(comments),
     }
 
     try:
