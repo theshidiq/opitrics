@@ -90,6 +90,13 @@ the smallest, most human detail, not the biggest figure. A thread that \
 ends on its largest number has told the reader everything by post 2.
 
 Hard rules:
+- POST 1 MUST NAME THE CAR. By name, in the first post, always. It is \
+the post that gets seen alone: retweeted, screenshotted, shown in a \
+timeline by somebody who never clicked the thread. "I went into this \
+comment section expecting a fight about the price" tells that reader \
+nothing at all. Which comment section? Under what? "This car", "this \
+video", "the comments" are all the same failure. Name the car the \
+payload gives you.
 - Lead with the single most surprising finding. Not a summary, not \
 methodology, not "I analysed X comments", the finding itself.
 - Do NOT restate the hook in post 2. If post 1 says a share of comments \
@@ -906,6 +913,31 @@ def check_superlatives(story: Story) -> list[str]:
                 "to a named cluster or cut it"
             )
     return problems
+
+
+def check_subject_named(story: Story, display_name: str) -> list[str]:
+    """Post 1 must name the car.
+
+    The opening post is the one that travels alone: retweeted,
+    screenshotted, surfaced in a timeline by somebody who never opened
+    the thread. "I went into this comment section expecting a fight
+    about the price" is a good sentence that tells such a reader
+    nothing, because it never says what was being argued about.
+
+    Any word of the display name counts, so "Racco" satisfies "BYD
+    Racco". Checking the whole string would fail on the natural way a
+    person writes it.
+    """
+    if not story.posts or not display_name:
+        return []
+    first = story.posts[0].text.lower()
+    words = [w for w in re.split(r"\W+", display_name.lower()) if len(w) > 2]
+    if any(w in first for w in words):
+        return []
+    return [
+        f"post 1 never names the {display_name}. It is the post that gets "
+        "seen alone, and 'this comment section' tells that reader nothing"
+    ]
 
 
 def strip_dashes(story: Story) -> int:

@@ -33,6 +33,7 @@ from opitrics.render.story import (  # noqa: E402
     check_repetition,
     check_rounding,
     check_sources_post,
+    check_subject_named,
     check_superlatives,
     check_theme_count,
     extract_story,
@@ -212,6 +213,7 @@ def build_angle(
     problems += check_quote_echo(story)
     problems += check_number_density(story)
     problems += check_dashes(story)
+    problems += check_subject_named(story, display)
     problems += check_superlatives(story)
     problems += check_theme_count(story, analysis)
     if problems:
