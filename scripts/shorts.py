@@ -461,7 +461,10 @@ def check_narration(lines: list[str], raw: int) -> list[str]:
                 f"line {i} claims something about buying. A comment "
                 "section is not a sample of anyone's purchases"
             )
-        if re.search(r"\b(he|she|his|her|him|guy|dude|man|woman)\b", line, re.I):
+        if re.search(
+            r"\b(he|she|his|her|him|hers|himself|herself|guy|dude|man|woman|"
+            r"bloke|lad)\b", line, re.I,
+        ):
             problems.append(
                 f"line {i} assigns a gender. The name is withheld and a "
                 "Japanese handle does not reveal one — use 'this one' or 'they'"
