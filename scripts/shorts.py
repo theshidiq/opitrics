@@ -72,9 +72,21 @@ talking.
   Strong:      "I did not expect this to turn into a fight about China."
 
   Card shows:  a Japanese comment, 311 likes
-  Weak:        "This one's got 311 likes. He's not even a buyer."
-  Strong:      "This guy does not even want one. He just wants them to
-                stop being smug about it."
+  Weak:        "This one's got 311 likes." (the card already says 311)
+  Strong:      "This one isn't defending the car. It's asking Japanese
+                makers to try harder."
+
+NEVER SAY WHETHER SOMEONE IS A BUYER. You know what a person wrote and
+how many liked it. You do not know if they own one, want one, would buy
+one, or never would. "He's not even a buyer", "wants one himself",
+"they're not buying it" — all forbidden, all invented. A comment
+section is not a sample of anyone's purchases. Describe the comment,
+never the person's situation.
+
+NEVER ASSIGN A GENDER. The commenter's name is withheld and you cannot
+tell from a Japanese handle. Not "this guy", not "he", not "she". Use
+"this one", "they", or nothing at all. You are already withholding the
+name; inferring the person is the same mistake one step further on.
 
 SAY QUANTITIES THE WAY A PERSON SAYS THEM. "A fifth of them." "Hundreds
 of people." "More than any other complaint." Nobody watching a vertical
@@ -83,10 +95,18 @@ number itself is the surprise: "1.2 tonnes, in a kei car" lands because
 it is absurd. AT MOST ONE line in the whole script may contain a figure
 over one hundred.
 
-DO NOT OPEN ON THE CORPUS TOTAL. Three of five scripts opened on
-"fifteen thousand nine hundred fifty comments", which tells a scrolling
-viewer nothing and is the same opening they have already scrolled past.
-Open on the most contested thing in the data, or on what surprised you.
+DO NOT OPEN ON THE CORPUS TOTAL. Three of five scripts opened on the
+raw comment count, which tells a scrolling viewer nothing and is the
+same opening they have already scrolled past. Open on the most
+contested thing in the data, or on what surprised you.
+
+AND NEVER ROUND IT ANYWHERE ELSE. Having been told not to open on the
+total, scripts then said "sixteen thousand comments" in a later beat —
+in one case four beats after saying the exact figure, so the script
+contradicted itself, and in another while the card on screen displayed
+the real number. If a count is spoken at all it is spoken exactly as
+given. The card is the receipt; narration that disagrees with the card
+is the one error this account cannot absorb.
 
 Rules:
 - SPOKEN, not written. Contractions. Read each line aloud; if you
@@ -386,6 +406,66 @@ def check_narration(lines: list[str], raw: int) -> list[str]:
         problems.append(
             "line 1 opens on the comment total. Open on the finding"
         )
+
+    # A rounded total anywhere, not just line 1. One script said the
+    # exact figure in beat 1 and "sixteen thousand" in beat 4, so it
+    # contradicted itself; another rounded while the card on screen
+    # displayed the real number. The card is the receipt, and narration
+    # that disagrees with it is the error this account cannot absorb.
+    words = {
+        1: "one", 2: "two", 3: "three", 4: "four", 5: "five",
+        6: "six", 7: "seven", 8: "eight", 9: "nine", 10: "ten",
+        11: "eleven", 12: "twelve", 13: "thirteen", 14: "fourteen",
+        15: "fifteen", 16: "sixteen", 17: "seventeen", 18: "eighteen",
+        19: "nineteen", 20: "twenty",
+    }
+    seen: set[tuple[int, int]] = set()
+    for step in (1000, 100):
+        for near in (raw // step * step, (raw // step + 1) * step):
+            if near == raw or not near:
+                continue
+            spoken = []
+            if near % 1000 == 0 and near // 1000 in words:
+                spoken.append(rf"{words[near // 1000]}\s+thousand")
+            spoken.append(re.escape(f"{near:,}"))
+            for i, line in enumerate(lines, 1):
+                # "fifteen thousand nine hundred fifty" contains
+                # "fifteen thousand" but is the exact figure spoken in
+                # full, so the prefix match alone is a false positive.
+                # It is caught by the open-on-the-total rule instead.
+                if re.search(
+                    rf"\b{words.get(raw // 1000, '~')}\s+thousand\s+\w+\s+hundred",
+                    line, re.I,
+                ):
+                    continue
+                for pat in spoken:
+                    if (i, near) in seen:
+                        continue
+                    if re.search(rf"\b{pat}\b", line, re.I):
+                        seen.add((i, near))
+                        problems.append(
+                            f"line {i} rounds the total to {near:,} — "
+                            f"the real figure is {raw:,}"
+                        )
+
+    # Claims about a commenter that the corpus cannot support. The
+    # prompt forbids both and used "He's not even a buyer" as its own
+    # WEAK example, which the model then wrote verbatim into a script:
+    # a phrase in an example gets copied whatever label sits above it.
+    for i, line in enumerate(lines, 1):
+        if re.search(
+            r"\b(not even a buyer|isn'?t a buyer|wants one|want one|"
+            r"would buy|won'?t buy|aren'?t buying|not buying)\b", line, re.I
+        ):
+            problems.append(
+                f"line {i} claims something about buying. A comment "
+                "section is not a sample of anyone's purchases"
+            )
+        if re.search(r"\b(he|she|his|her|him|guy|dude|man|woman)\b", line, re.I):
+            problems.append(
+                f"line {i} assigns a gender. The name is withheld and a "
+                "Japanese handle does not reveal one — use 'this one' or 'they'"
+            )
     return problems
 
 
