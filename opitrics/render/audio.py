@@ -78,7 +78,12 @@ class VoiceSettings:
     # which costs no time. Pushing past 1.0 on top of the pause
     # trimming overshot into a breathless read, so the tightening is
     # left to `deepen` where it can be measured.
-    speed: float = 1.0
+    # Under pace deliberately. At 1.0 the finished shorts measured 169
+    # to 192 words per minute against 140 to 160 for conversational
+    # speech, which reads as rushed on a phone and leaves no room for a
+    # line to land. Lengthening the card holds did not fix it — the
+    # narration simply grew to fill them — so the rate itself moves.
+    speed: float = 0.92
 
     def as_dict(self) -> dict:
         return {

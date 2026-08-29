@@ -60,6 +60,34 @@ the data, said plainly enough to stop a thumb.
   Weak:   "Nearly a quarter of the chatter isn't about the car."
   Strong: "They're not arguing about the car. They're arguing about China."
 
+THE CARD SHOWS THE NUMBER. YOU ARE THE VOICE OVER IT.
+
+Every line is spoken over a card that already displays the figure, the
+quote, or the chart. Saying the number out loud as well is the single
+thing that makes these sound like a data readout instead of somebody
+talking.
+
+  Card shows:  15,950 · comments read
+  Weak:        "Fifteen thousand nine hundred fifty comments on this car."
+  Strong:      "I did not expect this to turn into a fight about China."
+
+  Card shows:  a Japanese comment, 311 likes
+  Weak:        "This one's got 311 likes. He's not even a buyer."
+  Strong:      "This guy does not even want one. He just wants them to
+                stop being smug about it."
+
+SAY QUANTITIES THE WAY A PERSON SAYS THEM. "A fifth of them." "Hundreds
+of people." "More than any other complaint." Nobody watching a vertical
+video divides 3,205 by 15,950. Keep an exact figure only where the
+number itself is the surprise: "1.2 tonnes, in a kei car" lands because
+it is absurd. AT MOST ONE line in the whole script may contain a figure
+over one hundred.
+
+DO NOT OPEN ON THE CORPUS TOTAL. Three of five scripts opened on
+"fifteen thousand nine hundred fifty comments", which tells a scrolling
+viewer nothing and is the same opening they have already scrolled past.
+Open on the most contested thing in the data, or on what surprised you.
+
 Rules:
 - SPOKEN, not written. Contractions. Read each line aloud; if you
   stumble, rewrite it.
@@ -311,6 +339,110 @@ def _fit(
     return holds
 
 
+TRANSLATE_SYSTEM = """\
+You translate YouTube comments into natural English for a subtitle on
+a short video.
+
+Faithful, not literal. Keep the register: a blunt comment stays blunt,
+a sarcastic one stays sarcastic, a joke stays a joke. Do not soften an
+insult, do not add politeness the original does not have, and do not
+explain what the person meant.
+
+Keep it under 120 characters where the original allows, because it is
+rendered under the original on a phone screen. If the comment is long,
+translate the part that carries the point rather than summarising the
+whole thing.
+
+Return JSON: {"translations":[{"index":<int>,"english":"..."}]}"""
+
+
+def check_narration(lines: list[str], raw: int) -> list[str]:
+    """Numbers recited aloud, and openings that waste the first line.
+
+    The threads needed a gate for this because the prompt alone did not
+    hold, and the shorts have exactly the same failure with less room
+    to absorb it: a viewer leaves in two seconds, so a first line spent
+    on the corpus total is the whole video.
+    """
+    import re
+
+    problems: list[str] = []
+    numeric = [
+        i + 1 for i, line in enumerate(lines)
+        if any(int(t.replace(",", "")) > 100
+               for t in re.findall(r"\b\d[\d,]*\b", line))
+    ]
+    if len(numeric) > 1:
+        problems.append(
+            f"lines {', '.join(map(str, numeric))} recite a figure. At most "
+            "one should — the card already shows it"
+        )
+
+    # Spelled-out totals: "fifteen thousand nine hundred fifty" passes
+    # every digit check and is the same recitation.
+    if lines and re.search(
+        r"\b(thousand|hundred)\b.*\bcomments?\b", lines[0], re.I
+    ):
+        problems.append(
+            "line 1 opens on the comment total. Open on the finding"
+        )
+    return problems
+
+
+def translate_cards(client: LLMClient, cards: list[dict]) -> int:
+    """Fill in the English line under each non-English quote card.
+
+    The card component has always rendered a translation and the
+    pipeline has always passed the field, but `analysis.json` carries
+    no translations at all: 0 of 200 quotes had one, so every Japanese
+    comment in every short shipped untranslated. On an English-language
+    channel that is most of the evidence being unreadable.
+
+    Threads never hit this because the story LLM writes `quote_english`
+    as it goes. Shorts read the corpus directly, so the translation has
+    to happen here.
+    """
+    import re
+
+    latin_only = re.compile(r"^[\x00-\x7F\s]*$")
+    wanted = [
+        (i, card) for i, card in enumerate(cards)
+        if card.get("kind") == "quote"
+        and card.get("original")
+        and not card.get("english")
+        and not latin_only.match(card["original"])
+    ]
+    if not wanted:
+        return 0
+
+    payload = [{"index": i, "text": card["original"]} for i, card in wanted]
+    try:
+        result = client._chat(
+            TRANSLATE_SYSTEM,
+            "Translate these comments.\n\n"
+            + json.dumps(payload, ensure_ascii=False),
+            max_tokens=1200,
+        )
+    except Exception as exc:  # noqa: BLE001 - a missing subtitle is not fatal
+        print(f"  {YELLOW}translation failed: {exc}{RESET}")
+        return 0
+
+    by_index = {c[0]: c[1] for c in wanted}
+    filled = 0
+    for item in result.get("translations", []):
+        try:
+            card = by_index[int(item["index"])]
+        except (KeyError, ValueError, TypeError):
+            continue
+        english = str(item.get("english", "")).strip()
+        if english:
+            card["english"] = english
+            filled += 1
+    if filled:
+        print(f"  {DIM}{filled} quote(s) translated{RESET}")
+    return filled
+
+
 def load_photos(subject: str) -> list[tuple[Path, str]]:
     cache = settings.database_path.parent / "imagery" / subject
     manifest = cache / "credits.json"
@@ -354,6 +486,9 @@ def build_angle(
     if not built.cards:
         print(f"  {YELLOW}nothing to build from this angle — skipped{RESET}")
         return False
+
+    if client:
+        translate_cards(client, built.cards)
     print(f"  {DIM}{len(built.cards)} cards: "
           f"{', '.join(c['kind'] for c in built.cards)}{RESET}")
 
@@ -393,6 +528,11 @@ def build_angle(
                     for i, claim in invented:
                         print(f"    line {i}: {claim[:70]}")
                     return False
+            # Reported, not fatal. A recited number makes a duller video;
+            # an invented quote makes a false one, and only the second
+            # is worth refusing to render over.
+            for problem in check_narration(lines, raw):
+                print(f"  {YELLOW}· {problem}{RESET}")
             for i, line in enumerate(lines, 1):
                 print(f"  {BOLD}{i}{RESET} {line}")
         except Exception as exc:  # noqa: BLE001 - render silent rather than fail
@@ -425,7 +565,13 @@ def build_angle(
     # line has finished is dead air, and dead air is where a scrolling
     # viewer leaves. 0.25s reads as a beat; 0.6s read as a stall.
     holds = [
-        max(audio_duration(vo) + 0.25, 2.2) if vo else 2.6
+        # 0.55s after the line ends, not 0.25s. Measured at the old
+        # value the shorts ran 169 to 192 words per minute against 140
+        # to 160 for conversational speech, and the shortest card held
+        # 2.2s, which is not long enough to read a Japanese comment and
+        # its translation. A card the viewer cannot finish reading is
+        # the same as no evidence at all.
+        max(audio_duration(vo) + 0.55, 2.8) if vo else 3.0
         for vo in narration
     ]
     # Charts still need longer: the bars grow, the counts arrive, then
@@ -434,6 +580,12 @@ def build_angle(
     for i, card in enumerate(built.described):
         if card["kind"] in {"bars", "composition"}:
             holds[i] = max(holds[i], 4.2)
+        # A quote card now carries the original AND its translation, so
+        # it is two blocks of text to read while the narration talks
+        # over it. The floor is higher than for a card showing one
+        # number.
+        if card["kind"] == "quote":
+            holds[i] = max(holds[i], 4.6)
 
     holds = _fit(holds, args.min_seconds, args.max_seconds, args.crossfade)
 
