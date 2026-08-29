@@ -52,6 +52,14 @@ RESET = "\033[0m"
 
 LIMIT = 280
 
+# Words too common to indicate that a post is about a theme.
+_STOPWORDS = {
+    "about", "that", "this", "they", "them", "with", "from", "just",
+    "what", "when", "your", "than", "then", "there", "their", "here",
+    "have", "been", "were", "into", "more", "most", "some", "over",
+    "comments", "comment", "people", "racco", "byd", "cars",
+}
+
 
 def _language_split(comments) -> dict[str, int]:
     """Count comments by the script they were written in.
@@ -131,6 +139,12 @@ def main() -> int:
     # it. Later angles fall back to stat cards, which differ per post.
     charts_taken: set[str] = set()
     quotes_taken: set[str] = set()
+    # Stat figures are a shared resource across a subject's threads for
+    # the same reason charts are. Deduping within a thread left one
+    # identical "78%" card appearing in five different threads, because
+    # each thread was individually correct and only a set that outlives
+    # the loop can see the collision.
+    stats_taken: set[str] = set()
     for key in wanted:
         ok = build_angle(
             client=client,
@@ -145,6 +159,7 @@ def main() -> int:
             sources_url=args.sources_url,
             charts_taken=charts_taken,
             quotes_taken=quotes_taken,
+            stats_taken=stats_taken,
         )
         failures += 0 if ok else 1
 
@@ -169,6 +184,7 @@ def build_angle(
     sources_url: str = "",
     charts_taken: set[str] | None = None,
     quotes_taken: set[str] | None = None,
+    stats_taken: set[str] | None = None,
 ) -> bool:
     tp = paths.thread(angle.key).ensure()
 
@@ -326,6 +342,8 @@ def build_angle(
         if problem.startswith("post ")
     }
 
+    if stats_taken is None:
+        stats_taken = set()
     for post in story.posts:
         path = tp.card(post.index)
 
@@ -355,7 +373,9 @@ def build_angle(
                 print(f"    {YELLOW}{path.name} · chart {post.chart} missing{RESET}")
             continue
 
-        figure, caption = _pick_stat(post, analysis, meta, angle.key)
+        figure, caption = _pick_stat(
+            post, analysis, meta, angle.key, stats_taken
+        )
         # No detail line. It used to be `post.text[:150]`, which printed
         # the post's own words underneath its own figure — so a reader
         # got the same sentence twice, once as prose and once as an
@@ -368,7 +388,10 @@ def build_angle(
     return True
 
 
-def _pick_stat(post, analysis: dict, meta: dict, angle_key: str = "") -> tuple[str, str]:
+def _pick_stat(
+    post, analysis: dict, meta: dict, angle_key: str = "",
+    taken: set[str] | None = None,
+) -> tuple[str, str]:
     """Choose a headline figure for a post that has no chart or quote.
 
     Keyed by angle, not only by post kind. The first version returned
@@ -385,29 +408,112 @@ def _pick_stat(post, analysis: dict, meta: dict, angle_key: str = "") -> tuple[s
     clusters = analysis.get("clusters", [])
     share = round(100 * totals["car"] / clustered)
 
+    if taken is None:
+        taken = set()
+
     if post.kind == "closer":
+        taken.add(f"{meta['videos']}")
         return f"{meta['videos']}", "videos analysed"
 
     if post.kind == "hook":
+        # Recorded so a later finding does not repeat the opening figure.
+        def opening(figure: str, caption: str) -> tuple[str, str]:
+            taken.add(figure)
+            return figure, caption
+
         if angle_key == "fight":
-            return f"{100 - share}%", "not about the car at all"
+            return opening(f"{100 - share}%", "not about the car at all")
         if angle_key == "defenders" and clusters:
             best = max(clusters, key=lambda c: c["sentiment"]["polarity"])
-            return f"{best['size']:,}", "came to defend it"
+            return opening(f"{best['size']:,}", "came to defend it")
         if angle_key == "quotes":
             quoted = sum(len(c.get("quotes", [])) for c in clusters)
             if quoted:
-                return f"{quoted:,}", "comments quoted verbatim"
+                return opening(f"{quoted:,}", "comments quoted verbatim")
         if angle_key == "method":
-            return f"{len(clusters)}", "themes, named by hand"
-        return f"{meta['raw']:,}", "comments read"
+            return opening(f"{len(clusters)}", "themes, named by hand")
+        if angle_key == "who":
+            # The angle's whole claim is who is doing the talking, so
+            # the opening figure is the language split rather than the
+            # corpus total. Without this it opened on the same card as
+            # "car", which is the collision the per-angle branch exists
+            # to prevent and which a newly added angle walks straight
+            # back into.
+            languages = meta.get("languages") or {}
+            japanese = languages.get("japanese", 0)
+            if japanese:
+                share_jp = round(100 * japanese / max(sum(languages.values()), 1))
+                return opening(f"{share_jp}%", "written in Japanese")
+        return opening(f"{meta['raw']:,}", "comments read")
 
-    # Findings: the same reasoning one level down. "78% about the car"
-    # on every non-hook card is the same collision, just less visible.
+    # Findings. Branching by angle alone was not enough: within a single
+    # thread every non-hook stat card still resolved to the same figure,
+    # and since roughly half of all posts fall back to a stat card, one
+    # identical "78% actually about the car" appeared fourteen times
+    # across four threads. Each of those posts is a different claim, so
+    # each gets a different number.
+    #
+    # `taken` carries what this thread has already shown, so the choice
+    # is per post rather than per angle.
+    if taken is None:
+        taken = set()
+
+    def unused(figure: str, caption: str) -> tuple[str, str] | None:
+        if figure in taken:
+            return None
+        taken.add(figure)
+        return figure, caption
+
+    candidates: list[tuple[str, str]] = []
     if angle_key == "fight":
-        return f"{totals['meta']:,}", "arguing, not reviewing"
-    if angle_key == "method" and clusters:
-        return f"{len(clusters)}", "themes found"
+        candidates.append((f"{totals['meta']:,}", "arguing, not reviewing"))
+    if angle_key == "method":
+        candidates.append((f"{len(clusters)}", "themes found"))
+    candidates.append((f"{share}%", "actually about the car"))
+
+    # Then the themes, ordered by how well each matches THIS post. A
+    # unique figure is not enough on its own: picking the next unused
+    # theme gave post 4 a card reading "chinese origin concerns" while
+    # its text was about distrust, and post 6 "price and value debate"
+    # over text about sarcasm. Distinct and unrelated is worse than
+    # repeated, because a card that contradicts its post looks like a
+    # mistake rather than a repetition.
+    words = {
+        w for w in re.split(r"\W+", post.text.lower())
+        if len(w) > 3 and w not in _STOPWORDS
+    }
+    scored: list[tuple[int, int, str, str]] = []
+    for cluster in clusters:
+        label = cluster.get("llm_label") or cluster.get("aspect_label") or ""
+        if not label:
+            continue
+        terms = {w for w in re.split(r"\W+", label.lower()) if len(w) > 3}
+        overlap = len(words & terms)
+        scored.append((-overlap, -cluster["size"], f"{cluster['size']:,}",
+                       label.lower()))
+    scored.sort()
+    for negative_overlap, _, figure, caption in scored:
+        # An unrelated theme is not worth showing. Below one shared word
+        # the fallback share is more honest than a random count.
+        if negative_overlap == 0:
+            break
+        candidates.append((figure, caption))
+
+    for figure, caption in candidates:
+        picked = unused(figure, caption)
+        if picked:
+            return picked
+
+    # Nothing relevant and unused left. Rather than fall back to one
+    # shared figure — which is how six identical cards happened — take
+    # the largest theme not yet shown anywhere. It is less pointed than
+    # a matched one, but it is still true and still this post's own.
+    for cluster in sorted(clusters, key=lambda c: -c["size"]):
+        label = cluster.get("llm_label") or cluster.get("aspect_label") or ""
+        picked = unused(f"{cluster['size']:,}", label.lower()) if label else None
+        if picked:
+            return picked
+
     return f"{share}%", "actually about the car"
 
 
