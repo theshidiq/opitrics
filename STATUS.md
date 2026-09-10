@@ -246,6 +246,39 @@ falls through to Hiragino Sans, which `CLAUDE.md` records as rendering
 tofu. Latent while CJK lives in matplotlib quote cards, certain once
 every card is Japanese.
 
+### Picking the next subject
+
+`report.py` now prints the corpus shape from the `aspect_group` totals
+it already computes. For BYD Racco that reads **33% Brand & origin, 17%
+product** — which is the computed reason `defect` was doomed. That
+angle wants a product complaint, this corpus has almost none, so it
+reached for the largest cluster it could see and narrated a theme
+ranked 39th of 40 as dominant. That was knowable before rendering.
+
+Read it before choosing angles, and use it as the pre-fetch question
+too, since `fetch` is the only stage that spends quota:
+
+- **Brand & origin heavy** — the story is the argument, not the car.
+  Lead `fight`/`defenders`. An English-speaking car audience arrives
+  for the vehicle and finds geopolitics, so the hook has to say so
+  rather than bury it at post 9.
+- **Build/Driving/Practicality heavy** — the story is the product.
+  `defect` and `numbers` work. This travels to a car audience.
+- **Meta heavy** — the story is the comment section itself. That is
+  `method`'s material.
+- **Under ~20% product** — do not plan on shipping `defect` at all.
+
+**This is deliberately not new analysis.** The pipeline already
+computes more than it uses, and every additional derived number is
+another number that can be wrong on screen. On an account whose product
+is that its figures survive checking, a metric nobody fully trusts is a
+liability — which is how `defect` happened in the first place. The
+read-out displays a number that already existed; it invents nothing.
+
+What it cannot tell you is whether anyone will watch. Corpus shape
+picks the subject and the angles; only retention judges a hook, and
+only TikTok will return that signal in under a quarter.
+
 ### Thread voice: handing this to the pipeline
 
 Prompt-level fixes have stopped converging and this needs a code

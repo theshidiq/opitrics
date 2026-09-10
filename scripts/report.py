@@ -247,7 +247,84 @@ def main() -> int:
     if narrative.get("headline"):
         print(f'{DIM}"{narrative["headline"]}"{RESET}')
     print()
+    print_shape(analysis)
     return 0
+
+
+# Which angles a corpus can actually support, keyed by the aspect group
+# that dominates it. Not new analysis — `aspect_group` is already on
+# every cluster and already drives the charts. This only puts the
+# number where a decision gets made.
+SHAPE_ADVICE = {
+    "Brand & origin": (
+        "the argument, not the car",
+        "fight, defenders — an audience arrives for the car and finds "
+        "geopolitics, so say so in the hook rather than burying it",
+    ),
+    "Meta": (
+        "the comment section itself",
+        "method, fight — the corpus is about the video and the people "
+        "watching it more than the vehicle",
+    ),
+    "Build & quality": ("the product", "defect, numbers"),
+    "Driving": ("the product", "defect, numbers"),
+    "Practicality": ("the product", "defect, numbers"),
+    "EV": ("the technology", "numbers, defect"),
+    "Commercial": ("price and rivals", "numbers, car"),
+}
+
+
+def print_shape(analysis: dict) -> None:
+    """Say what this corpus is about, before anyone picks an angle.
+
+    Every failure in the first subject's shorts traces back to an angle
+    asking for material the corpus did not have. `defect` narrated a
+    cluster ranked 39th of 40 as dominant, because the angle wants a
+    product complaint and BYD Racco is 33% brand-and-origin argument
+    against 3% build quality. That was knowable here, before rendering.
+
+    Deliberately not a new metric. A derived number that nobody fully
+    trusts is a liability on an account whose product is that its
+    figures survive checking — so this prints what is already computed
+    rather than inventing a second vocabulary for it.
+    """
+    groups: dict[str, int] = {}
+    for cluster in analysis["clusters"]:
+        group = cluster.get("aspect_group") or "unmapped"
+        groups[group] = groups.get(group, 0) + cluster["size"]
+    total = sum(groups.values())
+    if not total:
+        return
+
+    ranked = sorted(groups.items(), key=lambda kv: -kv[1])
+    print(f"{BOLD}What this corpus is about{RESET}")
+    for name, size in ranked[:5]:
+        share = 100 * size / total
+        bar = "█" * max(1, round(share / 3))
+        print(f"  {name[:20]:<20} {share:>4.0f}%  {DIM}{bar}{RESET}")
+
+    top, top_size = ranked[0]
+    subject, angles = SHAPE_ADVICE.get(
+        top, ("this corpus", "read the clusters before choosing")
+    )
+    print(f"\n  The story here is {BOLD}{subject}{RESET}. Lead with: {angles}.")
+
+    # The warning that matters: an angle wanting product complaints has
+    # nothing to work with when the product groups are thin, and will
+    # reach for the largest cluster it can see instead.
+    product = sum(
+        size for name, size in groups.items()
+        if name in ("Build & quality", "Driving", "Practicality")
+    )
+    product_share = 100 * product / total
+    if product_share < 20:
+        print(
+            f"  {YELLOW}Only {product_share:.0f}% is about the product itself"
+            f"{RESET} {DIM}— `defect` has little to work with here and will "
+            f"reach for whatever it can see. Check its cluster before "
+            f"shipping it.{RESET}"
+        )
+    print()
 
 
 if __name__ == "__main__":
