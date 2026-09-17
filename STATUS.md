@@ -51,13 +51,34 @@ best-selling kei EV built its Chinese rival. Sources are in the
 2026-05 and 2026-07 trade coverage; check them again before that claim
 reaches a card.
 
+**Sakura and N-Box have analyses and sources pages, and no threads.**
+They were fetched to make the comparison possible, not to publish in
+their own right, and nothing has been generated from them beyond the
+figures in the table above. Building their threads is a decision
+nobody has made rather than a step that was skipped.
+
 Not built: the three-way card, which needs a different layout, and any
 shorts for the new subjects — ElevenLabs is exhausted until 24 Sep.
 
-## Where this stands before the next car
+**The comparison has no page, and that is the gap on the site.** The
+finding is the strongest thing the analysis has produced, and it exists
+as three 1200×675 PNGs in `content/` and a table in this file. A
+visitor can check any one car and cannot see the comparison at all.
+Deploying the PNGs alone would give bare image URLs nothing links to.
+`opitrics.com/compare/` — the four-way table, the three cards, each
+figure linking to the subject page behind it — is `web-steward`'s call
+and is not built.
 
-One thread published, on X, three weeks ago. Nothing since. Everything
-else is built and sitting on disk.
+**Verified 2026-09-17, in this order, so nobody re-checks:** all four
+sources pages return 200 and the index lists all four with their real
+counts; ElevenLabs still reads 40,000 of 40,000 used, 0 remaining,
+reset 24 Sep 18:38, tier still `starter` — so the 17 Sep top-up has
+still not landed on this key.
+
+## Where this stands
+
+One thread published, on X, on 2026-08-26. Nothing since. Everything
+else is built and sitting on disk, now across four subjects.
 
 **All five shorts on disk are SILENT, and blocked until 2026-09-24.**
 The ElevenLabs Starter quota is exhausted — 40,000 of 40,000 used, 0
@@ -93,24 +114,38 @@ default, ducking 3 dB under narration, and stopping dead on the
 `sources` card. Music is the fourth fix, not the first — it was never
 the reason the videos felt flat.
 
-**The honest blocker is not quality, it is signal.** Every judgement
-about voice, pace and framing this month has been guesswork against
-one post with no retention data. A second car doubles the inventory
-and adds nothing to what is known about whether any of it works.
-Posting two or three of the current pieces would be worth more than
-another corpus.
+**The blocker is not quality, it is signal, and it did not change.**
+Every judgement about voice, pace and framing this month has been
+guesswork against one post with no retention data. Three more corpora
+were added on 17 Sep and none of them moved that: there is now four
+times the inventory and still one data point. The user has said they
+intend to post, which is the thing that resolves it.
 
-If the reason for a second car is that one car cannot sustain an
-account, that is a fair and separate call.
+The corpora were the right call anyway, for a reason separate from
+volume: the comparison is a finding that no single car produces, and
+the Racco being the outlier on all four metrics is a stronger claim
+than anything in the Racco corpus alone.
 
 **Content state, measured 2026-09-17:**
 
 | | state |
 |---|---|
-| 6 threads | all carry warnings. One had a fabricated quote (see below) |
-| 5 shorts | render clean, translations working, 140 to 178 wpm |
-| verdict card | new, forced onto `car`, renders correctly |
+| Racco threads | 6, ten warnings across five. One had a fabricated quote (below) |
+| e Sky threads | 6, four warnings, three of them clean |
+| Sakura, N-Box | analysis and sources pages only. No threads |
+| Racco shorts | 5, **NO AUDIO STREAM.** Not quiet — silent. Do not post |
+| e Sky shorts | none. Blocked on the same quota |
+| comparison cards | 3, on disk, not deployed. No page around them |
+| verdict card | forced onto `car`, renders correctly |
 | queue | `data/output/queue.json`, empty, driven by `scripts/schedule.py` |
+
+An earlier version of this table said the shorts "render clean,
+translations working, 140 to 178 wpm", which was measured before the
+quota ran out and contradicted the silent-shorts note six paragraphs
+above it. Checked with `ffmpeg volumedetect` on 17 Sep: all five report
+no audio stream whatsoever. The contradiction is exactly how the first
+silent render got as far as being watched, so the table now states the
+worse of any two readings.
 
 **The number-recitation rule has never held.** Four sessions of prompt
 edits, then a gate, then a retry, and every thread still trips it. That
