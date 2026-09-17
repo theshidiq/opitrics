@@ -61,6 +61,58 @@ _STOPWORDS = {
 }
 
 
+def _verdict_lists(
+    analysis: dict,
+) -> tuple[list[tuple[str, int]], list[tuple[str, int]], str]:
+    """The two columns of the praise-versus-criticism card.
+
+    Sarcasm-flagged themes are excluded from both sides. Their polarity
+    is the one number the pipeline says not to trust, and a card whose
+    whole job is to read as a verdict is the worst place to put an
+    untrusted score.
+
+    The note is not decoration. On this corpus the largest criticism is
+    a nationalist brand-trust argument, which the aspect taxonomy files
+    as being about the car: a reader seeing it in a "what they
+    criticise" column would conclude people think the vehicle is bad,
+    when they are arguing about where it was built. If a brand-origin
+    theme makes the column, the card says so.
+    """
+    clusters = analysis.get("clusters", [])
+
+    def ranked(keep) -> list[dict]:
+        return sorted(
+            (c for c in clusters if keep(c) and not c.get("sarcasm_risk")),
+            key=lambda c: -c["size"],
+        )
+
+    praise = ranked(lambda c: c["sentiment"]["polarity"] > 0.15)
+    complaints = ranked(
+        lambda c: c["sentiment"]["polarity"] < -0.15 and not c.get("is_meta")
+    )
+
+    def label(cluster: dict) -> str:
+        return cluster.get("llm_label") or cluster.get("aspect_label") or ""
+
+    top_complaints = complaints[:4]
+    origin = any(
+        w in label(c).lower()
+        for c in top_complaints
+        for w in ("nationalis", "brand trust", "origin", "chinese", "china")
+    )
+    note = (
+        "Counted from comments, not buyers. Brand-origin arguments are not "
+        "complaints about the vehicle."
+        if origin
+        else "Counted from comments, not buyers."
+    )
+    return (
+        [(label(c), c["size"]) for c in praise[:4] if label(c)],
+        [(label(c), c["size"]) for c in top_complaints if label(c)],
+        note,
+    )
+
+
 def _language_split(comments) -> dict[str, int]:
     """Count comments by the script they were written in.
 
@@ -359,7 +411,21 @@ def build_angle(
             print(f"    {DIM}{path.name} · quote{RESET}")
             continue
 
-        if post.chart:
+        if post.chart == "verdict":
+            # Drawn from the analysis rather than read from a rendered
+            # chart file, because it is a composition of two cluster
+            # lists rather than a plot.
+            praise, complaints, note = _verdict_lists(analysis)
+            if praise and complaints:
+                cards_mod.verdict_card(
+                    praise, complaints, subject, path, note=note
+                )
+                print(f"    {DIM}{path.name} · verdict{RESET}")
+                continue
+            print(f"    {YELLOW}{path.name} · verdict needs both sides"
+                  f"{RESET}")
+
+        if post.chart and post.chart != "verdict":
             # Prefer the light chart — cards are on cream stock.
             for candidate in (
                 paths.chart(post.chart, "light"),

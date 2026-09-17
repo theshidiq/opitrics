@@ -117,6 +117,13 @@ couldn't score". Seven posts should carry seven facts, not four facts \
 and three restatements.
 - CHARTS: at most ONE post per chart, and use one or two per thread. A \
 post carrying a quote needs no chart; the quote is the image.
+  "verdict" is the praise-versus-criticism card: two columns, what \
+people rate and what they do not, with counts. It answers "is this \
+thing any good" faster than any other card, so it belongs on the post \
+that turns the thread, not the opening. Use it at most once. Do not use \
+it on an angle about the argument rather than the car, because the \
+largest criticism on this corpus is a brand-origin row and the card \
+would read as people disliking the vehicle.
 - HARD LIMIT: 240 characters per post. Count them. This is the single \
 most common failure, a post over the limit cannot be published at all.
 - Never paste a quote into the post text. Put it in `quote_original` \
@@ -680,7 +687,7 @@ def extract_story(
         '{"headline":"<the core claim, one line>",'
         '"posts":[{"index":1,"kind":"hook|finding|quote|method|closer",'
         '"text":"<=260 chars",'
-        '"chart":"aspects|volume-intensity|composition|null",'
+        '"chart":"aspects|volume-intensity|composition|verdict|null",'
         '"quote_original":"<verbatim or null>",'
         '"quote_english":"<translation or null>",'
         '"quote_likes":<int or null>}],'

@@ -440,6 +440,95 @@ def stat_card(
     return out
 
 
+def verdict_card(
+    praise: list[tuple[str, int]],
+    complaints: list[tuple[str, int]],
+    subject: str,
+    out: Path,
+    note: str = "",
+) -> Path:
+    """Two columns: what people praise, what they complain about.
+
+    The three existing card kinds are a quote, one big number, and a
+    chart — all of which show a single fact and none of which reads as
+    a judgement. A viewer scrolling wants to know whether the thing is
+    any good, and the fastest legible answer to that is two lists side
+    by side.
+
+    It carries a caveat by construction rather than by discipline. On
+    this corpus the largest "complaint" is a nationalist brand-trust
+    argument, which the aspect taxonomy files as being about the car
+    and which a naive pros-and-cons card would present as people
+    disliking the vehicle. `note` is where that gets said, and callers
+    that pass themes about the badge rather than the object should say
+    so there.
+
+    Counts sit beside each line rather than in the prose, same as every
+    other card: the figure is the card's job.
+    """
+    jp_font = _pick_font()
+    latin = _latin_font()
+    if jp_font:
+        plt.rcParams["font.family"] = jp_font
+
+    fig, ax = _fig(UI["ground"])
+
+    ax.text(0.055, 0.935, _tracked(subject.replace("-", " ").upper()),
+            fontsize=11, color=UI["dim"], family="monospace", va="center")
+    ax.plot([0.055, 0.945], [0.895, 0.895], color=UI["rule"], lw=1)
+
+    # Column headers, coloured so the split reads before any word does.
+    ax.text(0.075, 0.815, _tracked("WHAT THEY PRAISE"), fontsize=13,
+            color=LIGHT["pos"], family="monospace", weight="bold", va="center")
+    ax.text(0.545, 0.815, _tracked("WHAT THEY CRITICISE"), fontsize=13,
+            color=LIGHT["neg"], family="monospace", weight="bold", va="center")
+    ax.plot([0.5, 0.5], [0.16, 0.845], color=UI["rule"], lw=1)
+
+    def column(items: list[tuple[str, int]], x: float, colour: str) -> None:
+        """Rows advance by their own height.
+
+        A fixed step put the count of a two-line label on top of the
+        label's second line. Each row now reserves space for the lines
+        it actually has.
+        """
+        y = 0.755
+        for label, size in items[:4]:
+            clean = strip_emoji(label)
+            wrapped = _wrap(clean, 24, 2)
+            lines = wrapped.count("\n") + 1
+            label_height = 0.052 * lines
+
+            ax.plot([x - 0.02, x - 0.02], [y - label_height + 0.02, y + 0.016],
+                    color=colour, lw=3.5, solid_capstyle="butt")
+            ax.text(x, y + 0.014, wrapped, fontsize=19,
+                    color=UI["text"], va="top", linespacing=1.28,
+                    family=(jp_font if _is_cjk(clean) else (latin or jp_font)))
+            ax.text(x, y - label_height + 0.006, f"{size:,}", fontsize=14,
+                    color=UI["dim"], va="top", family="monospace")
+            y -= label_height + 0.062
+
+    column(praise, 0.075, LIGHT["pos"])
+    column(complaints, 0.545, LIGHT["neg"])
+
+    # The note sits above the footer rule, not across it, and is one
+    # line: at two it collided with the wordmark.
+    if note:
+        ax.text(0.5, 0.145, _wrap(strip_emoji(note), 104, 1), fontsize=12.5,
+                color=UI["dim"], ha="center", va="center",
+                family=latin or jp_font)
+
+    ax.plot([0.055, 0.945], [0.10, 0.10], color=UI["rule"], lw=1)
+    ax.text(0.055, 0.055, _tracked("OPITRICS"), fontsize=10.5,
+            color=UI["meta"], family="monospace", weight="bold", va="center")
+    ax.text(0.945, 0.055, "verifiable — every quote links to its source",
+            fontsize=11, color=UI["dim"], ha="right", va="center",
+            family=latin or jp_font)
+
+    fig.savefig(out, facecolor=UI["ground"])
+    plt.close(fig)
+    return out
+
+
 def chart_card(chart_path: Path, title: str, subject: str, out: Path) -> Path:
     """Wrap a chart in the same furniture.
 
