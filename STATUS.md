@@ -17,6 +17,40 @@ car; verdict card added and forced onto the `car` angle).
 One thread published, on X, three weeks ago. Nothing since. Everything
 else is built and sitting on disk.
 
+**All five shorts on disk are SILENT, and blocked until 2026-09-24.**
+The ElevenLabs Starter quota is exhausted — 40,000 of 40,000 used, 0
+remaining, resets 24 Sep 18:38 JST. A top-up was purchased on 17 Sep
+and has not appeared on the key in `.env`; check it went to the account
+that key belongs to, and whether it was a plan upgrade rather than
+credits, since `tier` still reads `starter` at a 40,000 limit.
+
+How they went silent is worth keeping. Every `speak()` call failed on
+the exhausted quota, each printed a warning, and the render completed
+anyway — so five plausible-looking files sat on disk with no audio. The
+user watched one, said it felt flat, and asked for background music.
+An afternoon went into diagnosing that as an editorial problem before
+anyone checked the audio track. `scripts/shorts.py` now raises rather
+than warns, and refuses partial voicing too.
+
+The editorial findings from that detour were real and are committed
+anyway: the `numbers` hook contradicted its own second beat ("They're
+not arguing about the car", then 4.3s later "seventy-eight percent is
+actually about the car"), and three of seven lines resolved to "it
+varies". Both are gated now. The regenerated script fixes both — it
+opens "One in five comments about this car isn't about the car at all"
+— and is waiting on credits to be voiced.
+
+**Music is spec'd but not built, and needs a supplied file.**
+`video.py` already accepts `--music` and mixes at a low gain; it has
+simply never been given a track. `audio.py`'s docstring deliberately
+rules out ElevenLabs-generated music over commercial-licence
+ambiguity, so this needs a licensed file rather than a generated one.
+Spec if it is wanted: 70-85 BPM, no drums or percussive transient, two
+voices at most, no resolving progression, -26 dB rather than the -22
+default, ducking 3 dB under narration, and stopping dead on the
+`sources` card. Music is the fourth fix, not the first — it was never
+the reason the videos felt flat.
+
 **The honest blocker is not quality, it is signal.** Every judgement
 about voice, pace and framing this month has been guesswork against
 one post with no retention data. A second car doubles the inventory
