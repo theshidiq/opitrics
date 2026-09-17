@@ -9,8 +9,8 @@ record of *decisions*. This file is the record of *state* — what is
 done, what is blocked, and on whom. If something here stops being
 state and becomes a decision, move it there and drop it from here.
 
-Last updated 2026-09-17 (four corpora analysed; comparison
-cards built; sources pages live for all four).
+Last updated 2026-09-17 (four corpora analysed; comparison page live at
+`/compare/`; sources pages live for all four; site has an icon).
 
 ## Four corpora, and the comparison series
 
@@ -60,20 +60,48 @@ nobody has made rather than a step that was skipped.
 Not built: the three-way card, which needs a different layout, and any
 shorts for the new subjects — ElevenLabs is exhausted until 24 Sep.
 
-**The comparison has no page, and that is the gap on the site.** The
-finding is the strongest thing the analysis has produced, and it exists
-as three 1200×675 PNGs in `content/` and a table in this file. A
-visitor can check any one car and cannot see the comparison at all.
-Deploying the PNGs alone would give bare image URLs nothing links to.
-`opitrics.com/compare/` — the four-way table, the three cards, each
-figure linking to the subject page behind it — is `web-steward`'s call
-and is not built.
+**The comparison has a page: `opitrics.com/compare/`.** Built
+2026-09-17. The four-way table, the three cards, and every car name
+linking to the corpus behind it — which the cards had been promising
+("every number links to the comments it came from") while linking
+nowhere. Figures come from `compare.py`'s own `metrics()` rather than
+being retyped, so the page cannot disagree with the cards on it, and
+cards are discovered on disk, so a pair nobody rendered is simply
+absent.
+
+**Two figures in the table above are softer than they read**, found
+while writing that page against the real metrics rather than the
+rounded ones:
+
+- **"Three times the arguing, a third the positivity, twelve times the
+  sarcasm"** — the sarcasm ratio is **10.3×**, not twelve. Twelve comes
+  from dividing the rounded 24% by the rounded 2%. The page says ten.
+- **The Racco is at the extreme of all four measures but decisively
+  clear on only two.** On *about the car* its lead is 6 points (78 vs
+  84) while the three Japanese cars span 7 (84–91); same on *arguing*.
+  So "the outlier on every metric" is true about direction and
+  overstates two of four. The page bolds extremity rather than rank and
+  says the two decisive results are sentiment — positive share and
+  unscorable share — not subject matter. That is a better claim
+  anyway: what separates the Racco is *how* its comment section talks,
+  not what about.
+
+Worth carrying into any short or thread built from this series, because
+both figures are the kind a viewer can check.
 
 **Verified 2026-09-17, in this order, so nobody re-checks:** all four
 sources pages return 200 and the index lists all four with their real
 counts; ElevenLabs still reads 40,000 of 40,000 used, 0 remaining,
 reset 24 Sep 18:38, tier still `starter` — so the 17 Sep top-up has
 still not landed on this key.
+
+Also verified after the `/compare/` deploy: every one of the ten public
+URLs returns 200 (`/`, `/compare/`, four subjects, `/terms/`,
+`/privacy/`, `/icon.svg`, `/site.webmanifest`); all three cards decode
+on the live page rather than merely returning 200; every internal link
+on `/compare/` resolves; and still **zero `<script>` tags on any page**,
+which is what `/privacy/` claims and the one claim there a reader can
+check with view-source.
 
 ## Where this stands
 
@@ -135,7 +163,7 @@ than anything in the Racco corpus alone.
 | Sakura, N-Box | analysis and sources pages only. No threads |
 | Racco shorts | 5, **NO AUDIO STREAM.** Not quiet — silent. Do not post |
 | e Sky shorts | none. Blocked on the same quota |
-| comparison cards | 3, on disk, not deployed. No page around them |
+| comparison cards | 3, live at `/compare/` with the four-way table |
 | verdict card | forced onto `car`, renders correctly |
 | queue | `data/output/queue.json`, empty, driven by `scripts/schedule.py` |
 
@@ -329,6 +357,22 @@ claim that has to survive being checked. The prompt now tells the model
 to describe what is actually at the URL and explicitly not to promise a
 video list or a quote list. Rebuilt: five threads, longest post 279 of
 280, 27 quotes verbatim against the corpus, 23/23 translations clean.
+
+**Icon and manifest.** `/icon.svg` and `/site.webmanifest`, linked from
+every page including the four subject reports and their audit pages.
+The icon is the avatar's `small` variant from `brand/make_assets.py`
+rendered as SVG — thicker bars, wider inset, tighter notch. Use that
+variant and not the large one: it was tuned against a 24px proof, which
+is the favicon problem exactly, and the large one's divisions close up
+at 16px into two blue smudges. Checked at 16/24/32/64/180 and on a grey
+tab strip.
+
+`display: browser` in the manifest is deliberate. A standalone install
+would strip the URL bar from a site whose entire argument is that you
+can check where you are and where a link goes. Both files are served
+with the right content type (`image/svg+xml`,
+`application/manifest+json`), which is worth re-checking after any
+hosting change — a manifest served as `text/plain` is silently ignored.
 
 **Email.** Workspace Starter on the domain, MX live. One seat, aliases
 per platform. `info@opitrics.com` is on five public pages as the route
