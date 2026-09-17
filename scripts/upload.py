@@ -1,7 +1,7 @@
 """Review a short, then upload it to YouTube.
 
     python scripts/upload.py --subject byd-racco
-    python scripts/upload.py --subject byd-racco --scope data --public
+    python scripts/upload.py --subject byd-racco --angle numbers --public
     python scripts/upload.py --subject byd-racco --dry-run
 
 Opens a page showing the video, the title, the description and the
@@ -225,8 +225,12 @@ document.getElementById('go').onclick = async () => {{
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--subject", required=True)
-    ap.add_argument("--scope", default="data",
-                    help="which short to upload (see content/shorts/)")
+    # Was --scope, defaulting to "data". Both were wrong: shorts are
+    # organised by angle, and "data" has not been a directory since
+    # shorts.py replaced datashort.py. The old name is kept as a hidden
+    # alias so an existing command line does not break.
+    ap.add_argument("--angle", "--scope", dest="angle", default="numbers",
+                    help="which angle to upload (see content/shorts/)")
     ap.add_argument("--public", action="store_true",
                     help="publish publicly rather than private")
     ap.add_argument("--unlisted", action="store_true")
@@ -237,10 +241,24 @@ def main() -> int:
     args = ap.parse_args()
 
     paths = settings.workspace.subject(args.subject)
-    short_dir = paths.content_dir / "shorts" / args.scope
+    short_dir = paths.content_dir / "shorts" / args.angle
     video = short_dir / "short.mp4"
     if not video.exists():
-        print(f"\n{video} not found — run scripts/datashort.py first.\n")
+        # The old message named datashort.py, which CLAUDE.md records as
+        # superseded — so a missing file sent you to a dead script
+        # instead of to the angle you actually meant. List what is
+        # there; the answer is almost always a typo or an unbuilt angle.
+        built = sorted(
+            p.parent.name
+            for p in (paths.content_dir / "shorts").glob("*/short.mp4")
+        )
+        print(f"\n{video} not found.")
+        if built:
+            print(f"built angles: {', '.join(built)}")
+            print("  pass one with --angle, e.g. "
+                  f"--angle {built[0]}\n")
+        else:
+            print("no angles built yet — run scripts/shorts.py --all first.\n")
         return 1
 
     display = paths.display_name
