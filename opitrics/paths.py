@@ -122,6 +122,16 @@ class SubjectPaths:
         return self.root / "subject.json"
 
     @property
+    def specs(self) -> Path:
+        """Hand-entered manufacturer figures, each with its source URL.
+
+        Deliberately not under analysis/: nothing the pipeline computes
+        writes here, and a re-analysis must never overwrite it. See
+        opitrics/analyze/specs.py for the shape and the reasoning.
+        """
+        return self.root / "specs.json"
+
+    @property
     def clusters(self) -> Path:
         return self.analysis_dir / "clusters.json"
 

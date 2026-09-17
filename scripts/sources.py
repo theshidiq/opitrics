@@ -112,6 +112,18 @@ def main() -> int:
     except Exception as exc:  # a chart failure must not lose the report
         print(f"  {YELLOW}charts skipped:{RESET} {exc}")
 
+    # Manufacturer figures, if someone has entered any. Unsourced rows
+    # are dropped by `load` with a warning rather than reaching a page —
+    # see opitrics/analyze/specs.py.
+    from opitrics.analyze import specs as specs_mod  # noqa: E402
+
+    spec_rows = specs_mod.load(paths.specs)
+    if spec_rows:
+        discussed, total = specs_mod.coverage(spec_rows, analysis["clusters"])
+        colour = GREEN if discussed else YELLOW
+        print(f"  {colour}{discussed}/{total}{RESET} specs raised by "
+              f"commenters {DIM}(the rest say so on the page){RESET}")
+
     report_html = build_report_page(
         subject=args.subject,
         display_name=paths.display_name,
@@ -120,6 +132,7 @@ def main() -> int:
         meta={"raw": len(rows), "fetched_on": fetched},
         charts=chart_paths,
         sources_url=args.sources_url or "sources.html",
+        specs=spec_rows,
     )
     report_out = paths.content_dir / "report-public.html"
     report_out.write_text(report_html, encoding="utf-8")

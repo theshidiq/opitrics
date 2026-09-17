@@ -239,9 +239,41 @@ blockquote .src a:hover{text-decoration:underline}
 .toc li{margin-bottom:6px;font-size:14.5px;break-inside:avoid}
 .toc a{color:var(--accent);text-decoration:none}
 .toc a:hover{text-decoration:underline}
+/* ── specifications ─────────────────────────────────────────
+   The car's own figures, each beside what the comment section said
+   about it. A spec row and a comment count sit in the same block
+   deliberately: the point is the pairing, not the table. */
+.specgroup{margin:26px 0 0}
+.specgroup>h3{font-size:12px;font-family:ui-monospace,monospace;
+  letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);
+  margin:0 0 10px;padding-bottom:7px;border-bottom:1px solid var(--hair)}
+.spec{border:1px solid var(--line);padding:14px 16px;margin-bottom:10px}
+.spec-top{display:flex;justify-content:space-between;gap:16px;
+  align-items:baseline;flex-wrap:wrap}
+.spec-label{font-size:15px;color:var(--ink-2)}
+.spec-value{font-family:ui-monospace,monospace;font-size:19px;
+  font-variant-numeric:tabular-nums;color:var(--ink);font-weight:600}
+.spec-note{font-size:13px;color:var(--ink-3);margin:7px 0 0}
+.spec-src{font-family:ui-monospace,monospace;font-size:11px;
+  color:var(--ink-3);margin-top:8px}
+.spec-src a{color:var(--accent);text-decoration:none}
+.spec-src a:hover{text-decoration:underline}
+.spec-said{border-top:1px solid var(--hair);margin-top:11px;padding-top:10px}
+.spec-said .hd{font-family:ui-monospace,monospace;font-size:10.5px;
+  letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);
+  margin:0 0 7px}
+.spec-said ul{list-style:none;padding:0;margin:0}
+.spec-said li{font-size:14.5px;color:var(--ink-2);padding:3px 0}
+.spec-said li a{color:var(--accent);text-decoration:none}
+.spec-said li a:hover{text-decoration:underline}
+.spec-said .n{font-family:ui-monospace,monospace;font-size:12px;
+  color:var(--ink-3)}
+.spec-quiet{font-size:13px;color:var(--ink-3);margin-top:10px;
+  border-top:1px solid var(--hair);padding-top:9px}
 @media(max-width:560px){.toc{columns:1}
   h1{font-size:26px}
-  .wrap{padding:34px 18px 70px}}
+  .wrap{padding:34px 18px 70px}
+  .spec-top{flex-direction:column;gap:2px}}
 """
 
 
@@ -294,7 +326,7 @@ def _theme_card(cluster: dict) -> str:
         _quote_block(q) for q in cluster.get("quotes", [])[:2]
     )
 
-    return f"""<div class="theme">
+    return f"""<div class="theme" id="theme-{cluster.get('cluster_id', '')}">
   <div class="theme-top">
     <h4>{html.escape(label)}</h4>
     <div>{"".join(pills)}</div>
@@ -315,6 +347,100 @@ def _theme_card(cluster: dict) -> str:
 </div>"""
 
 
+def _spec_block(spec, clusters: list[dict]) -> str:
+    """One figure, with whatever the comment section said about it.
+
+    The themes are named and counted, not summarised: a count is a fact
+    about the corpus, and a summary here would be a second opinion about
+    a theme that already carries its own. Each links to its own card
+    further down the page, so the figure is a way into the discussion
+    rather than a replacement for it.
+    """
+    from opitrics.analyze import specs as specs_mod
+
+    themes = specs_mod.themes_for(spec, clusters)
+
+    said = ""
+    if themes:
+        total = sum(t.get("size", 0) for t in themes)
+        items = "".join(
+            f'<li><a href="#theme-{t["cluster_id"]}">'
+            f'{html.escape(t.get("llm_label") or t.get("aspect_label", "theme"))}</a> '
+            f'<span class="n">· {t.get("size", 0):,} comments · '
+            f'{t.get("sentiment", {}).get("negative", 0):.0%} negative</span></li>'
+            for t in themes[:4]
+        )
+        said = (
+            f'<div class="spec-said"><p class="hd">'
+            f'What the comment section said · {total:,} comments</p>'
+            f"<ul>{items}</ul></div>"
+        )
+    else:
+        # Said plainly rather than left blank. A figure nobody discussed
+        # is a true fact about the car and an absence in the corpus, and
+        # the absence is itself worth knowing — it is what the `defect`
+        # angle failed to notice.
+        said = (
+            '<p class="spec-quiet">Nothing in this corpus discussed '
+            "this.</p>"
+        )
+
+    note = (
+        f'<p class="spec-note">{html.escape(spec.note)}</p>'
+        if spec.note else ""
+    )
+    src_name = html.escape(spec.source_name or "source")
+
+    return f"""<div class="spec">
+  <div class="spec-top">
+    <span class="spec-label">{html.escape(spec.label)}</span>
+    <span class="spec-value">{html.escape(spec.value)}</span>
+  </div>
+  {note}
+  <p class="spec-src">via <a href="{html.escape(spec.source_url)}"
+     target="_blank" rel="noopener">{src_name} ↗</a></p>
+  {said}
+</div>"""
+
+
+def build_spec_section(specs: list, clusters: list[dict]) -> str:
+    """The car's published figures, grouped, beside the discussion.
+
+    Returns "" when there are no specs, so a subject without a
+    specs.json renders exactly as it did before.
+    """
+    if not specs:
+        return ""
+
+    from opitrics.analyze import specs as specs_mod
+
+    discussed, total = specs_mod.coverage(specs, clusters)
+    groups = "\n".join(
+        f'<div class="specgroup"><h3>{html.escape(name)}</h3>'
+        + "\n".join(_spec_block(s, clusters) for s in items)
+        + "</div>"
+        for name, items in specs_mod.by_group(specs)
+    )
+
+    return f"""
+<h2>The car itself</h2>
+<p style="color:var(--ink-2);margin:0 0 4px;max-width:66ch">
+  What the manufacturer publishes, beside what the comment section made
+  of it. Every figure links to the page it was read from —
+  {discussed} of {total} were raised by commenters at all, and the ones
+  nobody mentioned say so.
+</p>
+<div class="note">
+  <b>These are the manufacturer's figures, not ours.</b> They are typed
+  in by hand from the pages linked on each row, and nothing here is
+  measured, tested or inferred by this project. A figure and a complaint
+  sitting side by side is not a verdict on either: the comments are
+  opinions with permalinks, the specs are claims with sources, and
+  deciding between them is the reader's business.
+</div>
+{groups}"""
+
+
 def build_report_page(
     subject: str,
     display_name: str,
@@ -323,6 +449,7 @@ def build_report_page(
     meta: dict,
     charts: dict[str, Path] | None = None,
     sources_url: str = "",
+    specs: list | None = None,
 ) -> str:
     """The full public report: what was found, shown, and checkable.
 
@@ -421,6 +548,8 @@ def build_report_page(
 {chart_figure("composition",
   "Not every comment is about the car. Comments about the video or its "
   "presenter are separated out and excluded from the themes below.")}
+
+{build_spec_section(specs or [], clusters)}
 
 <h2>What people talk about</h2>
 <p style="color:var(--ink-2);margin:0 0 4px;max-width:66ch">

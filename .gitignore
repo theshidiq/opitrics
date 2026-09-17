@@ -10,6 +10,15 @@ data/cache/
 data/output/*
 !data/output/.gitkeep
 
+# ...except the spec files, which are the one thing under data/ that is
+# NOT regenerable: hand-typed manufacturer figures with their source
+# URLs. Losing one means re-reading a catalogue, not re-running a stage.
+!data/output/subjects/
+data/output/subjects/*
+!data/output/subjects/*/
+data/output/subjects/*/*
+!data/output/subjects/*/specs.json
+
 # Python
 __pycache__/
 *.py[cod]
