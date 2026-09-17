@@ -473,56 +473,70 @@ def verdict_card(
 
     fig, ax = _fig(UI["ground"])
 
-    ax.text(0.055, 0.935, _tracked(subject.replace("-", " ").upper()),
-            fontsize=11, color=UI["dim"], family="monospace", va="center")
-    ax.plot([0.055, 0.945], [0.895, 0.895], color=UI["rule"], lw=1)
+    # Two solid colour fields, edge to edge, split down the middle. The
+    # first version was thin type and whitespace on white, which is the
+    # look of every generated infographic and reads as one. The quote
+    # cards escape that by recreating a real interface; this has no such
+    # anchor, so it earns its own presence with weight instead.
+    pos_colour, neg_colour = LIGHT["pos"], LIGHT["neg"]
+    ax.add_patch(Rectangle((0, 0.175), 0.5, 0.69, facecolor=pos_colour,
+                           edgecolor="none", zorder=0))
+    ax.add_patch(Rectangle((0.5, 0.175), 0.5, 0.69, facecolor=neg_colour,
+                           edgecolor="none", zorder=0))
 
-    # Column headers, coloured so the split reads before any word does.
-    ax.text(0.075, 0.815, _tracked("WHAT THEY PRAISE"), fontsize=13,
-            color=LIGHT["pos"], family="monospace", weight="bold", va="center")
-    ax.text(0.545, 0.815, _tracked("WHAT THEY CRITICISE"), fontsize=13,
-            color=LIGHT["neg"], family="monospace", weight="bold", va="center")
-    ax.plot([0.5, 0.5], [0.16, 0.845], color=UI["rule"], lw=1)
+    ax.text(0.03, 0.945, _tracked(subject.replace("-", " ").upper()),
+            fontsize=12, color=UI["text"], family="monospace",
+            weight="bold", va="center")
 
-    def column(items: list[tuple[str, int]], x: float, colour: str) -> None:
-        """Rows advance by their own height.
+    ax.text(0.25, 0.815, _tracked("PRAISED"), fontsize=20, color="#FFFFFF",
+            family="monospace", weight="bold", ha="center", va="center",
+            zorder=3)
+    ax.text(0.75, 0.815, _tracked("CRITICISED"), fontsize=20, color="#FFFFFF",
+            family="monospace", weight="bold", ha="center", va="center",
+            zorder=3)
 
-        A fixed step put the count of a two-line label on top of the
-        label's second line. Each row now reserves space for the lines
-        it actually has.
+    def column(items: list[tuple[str, int]], left: float) -> None:
+        """Count first and large, then the theme under it.
+
+        The number leads because it is the thing that survives being
+        seen at thumbnail size, and because the label is often a
+        clause-long cluster name that nobody reads at a glance.
         """
-        y = 0.755
-        for label, size in items[:4]:
+        # Three rows, not four. Four fitted only by crowding, and the
+        # last one clipped through the colour field into the caveat.
+        # Three at this size is legible at thumbnail scale, which is
+        # the whole reason for the format.
+        y = 0.700
+        for label, size in items[:3]:
             clean = strip_emoji(label)
-            wrapped = _wrap(clean, 24, 2)
+            wrapped = _wrap(clean, 26, 2)
             lines = wrapped.count("\n") + 1
-            label_height = 0.052 * lines
 
-            ax.plot([x - 0.02, x - 0.02], [y - label_height + 0.02, y + 0.016],
-                    color=colour, lw=3.5, solid_capstyle="butt")
-            ax.text(x, y + 0.014, wrapped, fontsize=19,
-                    color=UI["text"], va="top", linespacing=1.28,
+            ax.text(left, y, f"{size:,}", fontsize=52, color="#FFFFFF",
+                    weight="bold", va="top", zorder=3,
+                    family=latin or jp_font)
+            ax.text(left + 0.145, y - 0.014, wrapped, fontsize=17,
+                    color="#FFFFFF", va="top", linespacing=1.3, zorder=3,
                     family=(jp_font if _is_cjk(clean) else (latin or jp_font)))
-            ax.text(x, y - label_height + 0.006, f"{size:,}", fontsize=14,
-                    color=UI["dim"], va="top", family="monospace")
-            y -= label_height + 0.062
+            y -= 0.175
 
-    column(praise, 0.075, LIGHT["pos"])
-    column(complaints, 0.545, LIGHT["neg"])
+    column(praise, 0.035)
+    column(complaints, 0.535)
 
-    # The note sits above the footer rule, not across it, and is one
-    # line: at two it collided with the wordmark.
+    # The caveat sits on white below the colour, in black. Grey small
+    # print under a bold graphic reads as a disclaimer nobody meant;
+    # this one is load-bearing and should look deliberate.
     if note:
-        ax.text(0.5, 0.145, _wrap(strip_emoji(note), 104, 1), fontsize=12.5,
-                color=UI["dim"], ha="center", va="center",
+        ax.text(0.03, 0.115, _wrap(strip_emoji(note), 100, 2), fontsize=13,
+                color=UI["text"], va="top", linespacing=1.45,
                 family=latin or jp_font)
-
-    ax.plot([0.055, 0.945], [0.10, 0.10], color=UI["rule"], lw=1)
-    ax.text(0.055, 0.055, _tracked("OPITRICS"), fontsize=10.5,
-            color=UI["meta"], family="monospace", weight="bold", va="center")
-    ax.text(0.945, 0.055, "verifiable — every quote links to its source",
-            fontsize=11, color=UI["dim"], ha="right", va="center",
+    ax.text(0.97, 0.045, "every number links to the comment it came from",
+            fontsize=11.5, color=UI["dim"], ha="right", va="center",
             family=latin or jp_font)
+
+    ax.text(0.97, 0.945, _tracked("OPITRICS"), fontsize=12,
+            color=UI["text"], family="monospace", weight="bold",
+            ha="right", va="center")
 
     fig.savefig(out, facecolor=UI["ground"])
     plt.close(fig)
