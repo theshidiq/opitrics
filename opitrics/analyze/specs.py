@@ -111,6 +111,22 @@ def load(path: Path) -> list[Spec]:
                 "needs a page a reader can open.", label,
             )
             continue
+        # A source has to open, not download. The first version of this
+        # file cited a catalogue PDF, so every "check" link handed the
+        # reader a 5.5 MB download instead of a page — on a page whose
+        # argument is "click it and see", that is the wrong destination.
+        # Warned rather than dropped: the figure is still sourced and
+        # true, and silently hiding it would be worse than a link that
+        # downloads. Fix it by finding the same figure on a web page.
+        if source.lower().rsplit("?", 1)[0].endswith(
+            (".pdf", ".doc", ".docx", ".xls", ".xlsx", ".zip")
+        ):
+            log.warning(
+                "spec %r cites a file download (%s), not a page. A reader "
+                "who clicks to check a figure should land on something "
+                "readable — find the figure on a web page if you can.",
+                label, source.rsplit("/", 1)[-1][:40],
+            )
         out.append(
             Spec(
                 label=label,

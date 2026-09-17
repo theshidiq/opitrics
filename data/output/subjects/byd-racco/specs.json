@@ -1,28 +1,39 @@
 {
   "_comment": [
     "Manufacturer figures for the BYD RACCO, typed in by hand from the",
-    "sources named on each row. Nothing here is computed, inferred or",
+    "source named on each row. Nothing here is computed, inferred or",
     "model-generated: see opitrics/analyze/specs.py for why.",
     "",
-    "Figures are from BYD Auto Japan's own catalogue PDF (catalog_202607_v2),",
-    "which prints the full 主要諸元 table for all three trims. Where the",
-    "three trims differ the value names them; where they agree it does not.",
+    "EVERY SOURCE IS A PAGE, NEVER A FILE DOWNLOAD. These figures were",
+    "first taken from BYD's catalogue PDF, which meant every 'check' link",
+    "fired a 5.5 MB download instead of opening something a reader could",
+    "read. On a page whose whole argument is 'click it and see', that is",
+    "the wrong destination. The lineup page carries the same 主要諸元",
+    "table (hydrated client-side from embedded JSON, so it is in the HTML",
+    "even though it renders via JavaScript), and it is what a reader",
+    "should land on.",
     "",
-    "Per-trim prices are deliberately absent. Only the base price is on a",
-    "BYD page I could read, and the 300Plus / 300Premium prices appear in",
-    "trade coverage rather than a manufacturer source. A figure without a",
-    "manufacturer page does not go in this file.",
+    "Four figures are therefore absent: ground clearance, DC charging",
+    "rate, V2H/V2L and the power sliding doors. All four are printed only",
+    "in the catalogue PDF, and a figure whose only source is a download",
+    "does not go on the page. Two of them had no comment themes anyway,",
+    "and DC charging shared its theme with range, so nothing is lost but",
+    "the rows themselves.",
+    "",
+    "All three trim prices ARE on the lineup page under",
+    "メーカー希望小売価格(税込) — an earlier note here claimed the two",
+    "higher trims were only in trade coverage, which was wrong.",
     "",
     "`aspect` joins a row to the taxonomy key whose themes discuss it, so",
     "the weight figure lands beside the weight argument. Leave it empty",
     "when nothing in the corpus raised the attribute — the row still",
-    "shows, just with no comments attached."
+    "shows, with a dash in the comment column."
   ],
   "specs": [
     {
-      "label": "Price, from",
-      "value": "¥2,145,000",
-      "note": "RACCO 200, including tax, before national or local EV subsidy",
+      "label": "Price",
+      "value": "¥2,145,000–2,497,000",
+      "note": "Including tax, before subsidy. ¥2,145,000 (200), ¥2,398,000 (300Plus), ¥2,497,000 (300Premium)",
       "aspect": "comm.price",
       "group": "Price",
       "source_url": "https://www.byd.com/jp/lineup/racco",
@@ -34,8 +45,8 @@
       "note": "1,160 kg (200), 1,220 kg (300Plus), 1,230 kg (300Premium)",
       "aspect": "drive.weight",
       "group": "Body & dimensions",
-      "source_url": "https://www.byd.com/material/__CN/byd-site/jp/lineup/racco/catalog/catalog_202607_v2.pdf",
-      "source_name": "BYD Auto Japan catalogue"
+      "source_url": "https://www.byd.com/jp/lineup/racco",
+      "source_name": "BYD Auto Japan"
     },
     {
       "label": "Length × width × height",
@@ -43,57 +54,65 @@
       "note": "Within Japan's kei class limits of 3,400 × 1,480 mm",
       "aspect": "",
       "group": "Body & dimensions",
-      "source_url": "https://www.byd.com/material/__CN/byd-site/jp/lineup/racco/catalog/catalog_202607_v2.pdf",
-      "source_name": "BYD Auto Japan catalogue"
-    },
-    {
-      "label": "Ground clearance",
-      "value": "130 mm",
-      "aspect": "prac.clearance",
-      "group": "Body & dimensions",
-      "source_url": "https://www.byd.com/material/__CN/byd-site/jp/lineup/racco/catalog/catalog_202607_v2.pdf",
-      "source_name": "BYD Auto Japan catalogue"
+      "source_url": "https://www.byd.com/jp/lineup/racco",
+      "source_name": "BYD Auto Japan"
     },
     {
       "label": "Wheelbase",
       "value": "2,520 mm",
       "aspect": "",
       "group": "Body & dimensions",
-      "source_url": "https://www.byd.com/material/__CN/byd-site/jp/lineup/racco/catalog/catalog_202607_v2.pdf",
-      "source_name": "BYD Auto Japan catalogue"
+      "source_url": "https://www.byd.com/jp/lineup/racco",
+      "source_name": "BYD Auto Japan"
+    },
+    {
+      "label": "Turning radius",
+      "value": "4.8 m",
+      "aspect": "",
+      "group": "Body & dimensions",
+      "source_url": "https://www.byd.com/jp/lineup/racco",
+      "source_name": "BYD Auto Japan"
     },
     {
       "label": "Seats",
       "value": "4",
       "aspect": "",
       "group": "Body & dimensions",
-      "source_url": "https://www.byd.com/material/__CN/byd-site/jp/lineup/racco/catalog/catalog_202607_v2.pdf",
-      "source_name": "BYD Auto Japan catalogue"
+      "source_url": "https://www.byd.com/jp/lineup/racco",
+      "source_name": "BYD Auto Japan"
     },
     {
       "label": "Motor output",
-      "value": "47 kW",
-      "note": "Rated 25 kW; 160 Nm torque, front-wheel drive, all trims",
+      "value": "47 kW (64 PS)",
+      "note": "Permanent magnet synchronous, front-wheel drive. 160 Nm torque, all trims",
       "aspect": "",
       "group": "Powertrain",
-      "source_url": "https://www.byd.com/material/__CN/byd-site/jp/lineup/racco/catalog/catalog_202607_v2.pdf",
-      "source_name": "BYD Auto Japan catalogue"
+      "source_url": "https://www.byd.com/jp/lineup/racco",
+      "source_name": "BYD Auto Japan"
     },
     {
       "label": "Suspension",
       "value": "MacPherson strut front, torsion beam rear",
       "aspect": "drive.ride",
       "group": "Powertrain",
-      "source_url": "https://www.byd.com/material/__CN/byd-site/jp/lineup/racco/catalog/catalog_202607_v2.pdf",
-      "source_name": "BYD Auto Japan catalogue"
+      "source_url": "https://www.byd.com/jp/lineup/racco",
+      "source_name": "BYD Auto Japan"
+    },
+    {
+      "label": "Brakes",
+      "value": "Ventilated disc front, solid disc rear",
+      "aspect": "",
+      "group": "Powertrain",
+      "source_url": "https://www.byd.com/jp/lineup/racco",
+      "source_name": "BYD Auto Japan"
     },
     {
       "label": "Tyres",
       "value": "165/65 R15",
       "aspect": "",
       "group": "Powertrain",
-      "source_url": "https://www.byd.com/material/__CN/byd-site/jp/lineup/racco/catalog/catalog_202607_v2.pdf",
-      "source_name": "BYD Auto Japan catalogue"
+      "source_url": "https://www.byd.com/jp/lineup/racco",
+      "source_name": "BYD Auto Japan"
     },
     {
       "label": "Battery",
@@ -101,8 +120,8 @@
       "note": "Lithium iron phosphate. 22.40 kWh (200), 35.84 kWh (300Plus and 300Premium)",
       "aspect": "ev.general",
       "group": "Battery & charging",
-      "source_url": "https://www.byd.com/material/__CN/byd-site/jp/lineup/racco/catalog/catalog_202607_v2.pdf",
-      "source_name": "BYD Auto Japan catalogue"
+      "source_url": "https://www.byd.com/jp/lineup/racco",
+      "source_name": "BYD Auto Japan"
     },
     {
       "label": "Range, WLTC",
@@ -110,42 +129,26 @@
       "note": "210 km (200), 320 km (300Plus and 300Premium)",
       "aspect": "ev.range",
       "group": "Battery & charging",
-      "source_url": "https://www.byd.com/material/__CN/byd-site/jp/lineup/racco/catalog/catalog_202607_v2.pdf",
-      "source_name": "BYD Auto Japan catalogue"
-    },
-    {
-      "label": "DC fast charging",
-      "value": "35.8 or 49.7 kW",
-      "note": "CHAdeMO. 35.8 kW (200), 49.7 kW (300Plus and 300Premium)",
-      "aspect": "ev.range",
-      "group": "Battery & charging",
-      "source_url": "https://www.byd.com/material/__CN/byd-site/jp/lineup/racco/catalog/catalog_202607_v2.pdf",
-      "source_name": "BYD Auto Japan catalogue"
+      "source_url": "https://www.byd.com/jp/lineup/racco",
+      "source_name": "BYD Auto Japan"
     },
     {
       "label": "Consumption, WLTC",
       "value": "120–124 Wh/km",
+      "note": "City 93–97, suburban 106–110, highway 140–145 Wh/km",
       "aspect": "",
       "group": "Battery & charging",
-      "source_url": "https://www.byd.com/material/__CN/byd-site/jp/lineup/racco/catalog/catalog_202607_v2.pdf",
-      "source_name": "BYD Auto Japan catalogue"
+      "source_url": "https://www.byd.com/jp/lineup/racco",
+      "source_name": "BYD Auto Japan"
     },
     {
-      "label": "V2H and V2L",
-      "value": "Standard on all trims",
-      "note": "Vehicle-to-home and vehicle-to-load, both via DC",
+      "label": "Cargo volume",
+      "value": "280 L",
+      "note": "Under the motor room",
       "aspect": "",
-      "group": "Battery & charging",
-      "source_url": "https://www.byd.com/material/__CN/byd-site/jp/lineup/racco/catalog/catalog_202607_v2.pdf",
-      "source_name": "BYD Auto Japan catalogue"
-    },
-    {
-      "label": "Power sliding doors",
-      "value": "Both sides, standard",
-      "aspect": "",
-      "group": "Specification",
-      "source_url": "https://www.byd.com/material/__CN/byd-site/jp/lineup/racco/catalog/catalog_202607_v2.pdf",
-      "source_name": "BYD Auto Japan catalogue"
+      "group": "Body & dimensions",
+      "source_url": "https://www.byd.com/jp/lineup/racco",
+      "source_name": "BYD Auto Japan"
     }
   ]
 }

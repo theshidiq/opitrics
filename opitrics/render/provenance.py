@@ -441,6 +441,11 @@ def _spec_row(spec, clusters: list[dict]) -> str:
     # column of identical noise wider than the figures themselves. The
     # source still has to be one click away — that is the rule — but it
     # does not have to shout on all fifteen rows.
+    #
+    # It must also land on a page, never a file. These figures were once
+    # sourced to a catalogue PDF, so every link fired a 5.5 MB download
+    # rather than opening something readable, which is the wrong thing to
+    # do to a reader who clicked to verify a number.
     src_name = html.escape(spec.source_name or "source")
 
     return (
