@@ -54,6 +54,31 @@ This audience is not a reader on X. A reader on X clicked. This viewer
 arrived by accident, is holding a thumb over the screen, and leaves in
 two seconds. Nothing is owed to you.
 
+THE HOOK MUST NOT CONTRADICT THE NEXT LINE. A script opened on
+"They're not arguing about the car. They're arguing about everything
+else." and then said, 4.3 seconds later, "Seventy-eight percent is
+actually about the car." The video refuted its own first line. That is
+not a provocative framing of a true finding — it is a false statement
+the viewer is then corrected on, and it leaves the piece with no
+tension to carry because the claim did not survive one card.
+
+Build the hook out of the finding, not against it. The minority slice
+is often the interesting part, and it can be the hook, but say what it
+is rather than overstating it into the majority:
+
+  Contradicts:  "They're not arguing about the car."  (78% are)
+  Holds:        "One in five of these comments isn't about the car at
+                 all." (true, and beat 2 becomes the payoff instead of
+                 the correction)
+
+NEVER RESOLVE A LINE TO "IT VARIES". One script said "some love it,
+some hate it, and a few are just confused", then "so is it any good?
+Depends who you ask", then "that's the one thing people keep coming
+back to" — three of seven lines saying there is no finding. An account
+whose whole product is measurement cannot spend a third of its
+narration shrugging. If a theme genuinely splits, give the split as two
+numbers; that is a finding. "Depends who you ask" is not.
+
 So the first line is not a summary. It is the most contested thing in
 the data, said plainly enough to stop a thumb.
 
@@ -447,6 +472,21 @@ def check_narration(lines: list[str], raw: int) -> list[str]:
                             f"line {i} rounds the total to {near:,} — "
                             f"the real figure is {raw:,}"
                         )
+
+    # Lines that resolve to "it varies". Three of seven in one script,
+    # which is a third of the narration telling the viewer there is no
+    # finding — on an account whose product is that there is one.
+    hedges = re.compile(
+        r"(depends who you ask|some love it|it varies|mixed bag|"
+        r"all over the place|hard to say|who's to say)", re.I
+    )
+    hedged = [i for i, line in enumerate(lines, 1) if hedges.search(line)]
+    if hedged:
+        problems.append(
+            f"line{'s' if len(hedged) > 1 else ''} "
+            f"{', '.join(map(str, hedged))} resolve to 'it varies'. "
+            "A split is a finding only if you give both numbers"
+        )
 
     # Claims about a commenter that the corpus cannot support. The
     # prompt forbids both and used "He's not even a buyer" as its own

@@ -1,12 +1,12 @@
 """Approve a short now, let it post later.
 
-    python scripts/queue.py add --subject byd-racco --angle numbers \\
+    python scripts/schedule.py add --subject byd-racco --angle numbers \\
         --platform tiktok --at 2026-09-18T09:00
 
-    python scripts/queue.py list
-    python scripts/queue.py drop <id>
-    python scripts/queue.py run            # post anything now due
-    python scripts/queue.py run --dry-run
+    python scripts/schedule.py list
+    python scripts/schedule.py drop <id>
+    python scripts/schedule.py run            # post anything now due
+    python scripts/schedule.py run --dry-run
 
 The approval and the posting are deliberately separate. `add` shows you
 the video, its caption and its checks, and writes an entry only if you
