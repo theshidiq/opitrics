@@ -543,6 +543,91 @@ def verdict_card(
     return out
 
 
+def compare_card(
+    left: tuple[str, dict],
+    right: tuple[str, dict],
+    rows: list[tuple[str, str, str]],
+    out: Path,
+    note: str = "",
+) -> Path:
+    """Two cars, one metric per row, side by side.
+
+    Every row is a SHARE or a rate, never a raw count. The corpora are
+    not the same size — the Racco drew 15,950 comments and the e Sky
+    2,948 — so "681 comments argued about the badge" against "105
+    argued with each other" compares audience size, not opinion, and
+    reads as the bigger car winning something.
+
+    `rows` is (label, left_value, right_value) already formatted, so
+    the caller decides what is comparable. This draws it.
+
+    The larger side of each row is emphasised rather than coloured
+    good or bad: on "share not about the car" the bigger number is not
+    better, and a green-versus-red reading would invent a verdict the
+    data does not support.
+    """
+    jp_font = _pick_font()
+    latin = _latin_font()
+    if jp_font:
+        plt.rcParams["font.family"] = jp_font
+
+    left_name, _ = left
+    right_name, _ = right
+
+    fig, ax = _fig(UI["ground"])
+
+    ax.add_patch(Rectangle((0, 0.755), 1.0, 0.13, facecolor=UI["text"],
+                           edgecolor="none", zorder=0))
+    ax.text(0.28, 0.818, left_name.upper(), fontsize=27, color="#FFFFFF",
+            weight="bold", ha="center", va="center", zorder=3,
+            family=latin or jp_font)
+    ax.text(0.5, 0.818, "vs", fontsize=15, color="#8A8A8A",
+            ha="center", va="center", zorder=3, style="italic",
+            family=latin or jp_font)
+    ax.text(0.76, 0.818, right_name.upper(), fontsize=27, color="#FFFFFF",
+            weight="bold", ha="center", va="center", zorder=3,
+            family=latin or jp_font)
+
+    y = 0.645
+    for label, left_value, right_value in rows[:4]:
+        try:
+            lead_left = float(re.sub(r"[^\d.]", "", left_value) or 0) >= \
+                float(re.sub(r"[^\d.]", "", right_value) or 0)
+        except ValueError:
+            lead_left = True
+
+        ax.text(0.28, y, left_value, fontsize=42,
+                color=UI["text"] if lead_left else UI["dim"],
+                weight="bold" if lead_left else "normal",
+                ha="center", va="center", family=latin or jp_font)
+        ax.text(0.76, y, right_value, fontsize=42,
+                color=UI["dim"] if lead_left else UI["text"],
+                weight="normal" if lead_left else "bold",
+                ha="center", va="center", family=latin or jp_font)
+        ax.text(0.5, y, _wrap(strip_emoji(label), 22, 2), fontsize=14,
+                color=UI["meta"], ha="center", va="center",
+                linespacing=1.3, family=latin or jp_font)
+        y -= 0.145
+        if y > 0.16:
+            ax.plot([0.04, 0.96], [y + 0.072, y + 0.072],
+                    color=UI["rule"], lw=1)
+
+    if note:
+        ax.text(0.04, 0.105, _wrap(strip_emoji(note), 100, 2), fontsize=13,
+                color=UI["text"], va="top", linespacing=1.45,
+                family=latin or jp_font)
+
+    ax.text(0.04, 0.93, _tracked("OPITRICS"), fontsize=12, color=UI["text"],
+            family="monospace", weight="bold", va="center")
+    ax.text(0.96, 0.045, "every number links to the comments it came from",
+            fontsize=11.5, color=UI["dim"], ha="right", va="center",
+            family=latin or jp_font)
+
+    fig.savefig(out, facecolor=UI["ground"])
+    plt.close(fig)
+    return out
+
+
 def chart_card(chart_path: Path, title: str, subject: str, out: Path) -> Path:
     """Wrap a chart in the same furniture.
 
