@@ -243,37 +243,80 @@ blockquote .src a:hover{text-decoration:underline}
    The car's own figures, each beside what the comment section said
    about it. A spec row and a comment count sit in the same block
    deliberately: the point is the pairing, not the table. */
-.specgroup{margin:26px 0 0}
-.specgroup>h3{font-size:12px;font-family:ui-monospace,monospace;
-  letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);
-  margin:0 0 10px;padding-bottom:7px;border-bottom:1px solid var(--hair)}
-.spec{border:1px solid var(--line);padding:14px 16px;margin-bottom:10px}
-.spec-top{display:flex;justify-content:space-between;gap:16px;
-  align-items:baseline;flex-wrap:wrap}
-.spec-label{font-size:15px;color:var(--ink-2)}
-.spec-value{font-family:ui-monospace,monospace;font-size:19px;
-  font-variant-numeric:tabular-nums;color:var(--ink);font-weight:600}
-.spec-note{font-size:13px;color:var(--ink-3);margin:7px 0 0}
-.spec-src{font-family:ui-monospace,monospace;font-size:11px;
-  color:var(--ink-3);margin-top:8px}
-.spec-src a{color:var(--accent);text-decoration:none}
-.spec-src a:hover{text-decoration:underline}
-.spec-said{border-top:1px solid var(--hair);margin-top:11px;padding-top:10px}
-.spec-said .hd{font-family:ui-monospace,monospace;font-size:10.5px;
-  letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);
-  margin:0 0 7px}
-.spec-said ul{list-style:none;padding:0;margin:0}
-.spec-said li{font-size:14.5px;color:var(--ink-2);padding:3px 0}
-.spec-said li a{color:var(--accent);text-decoration:none}
-.spec-said li a:hover{text-decoration:underline}
-.spec-said .n{font-family:ui-monospace,monospace;font-size:12px;
-  color:var(--ink-3)}
-.spec-quiet{font-size:13px;color:var(--ink-3);margin-top:10px;
-  border-top:1px solid var(--hair);padding-top:9px}
+/* One table, not fifteen cards. The card layout ran 3,752px — four
+   and a half phone screens — and eleven of those cards existed only to
+   say nothing discussed this figure, so the four that mattered were
+   buried in repetition. A table puts the discussed rows where they can
+   be found. */
+.spectable{overflow-x:auto;border:1px solid var(--line);margin:20px 0}
+table.spec{width:100%;min-width:560px;border-collapse:collapse;
+  font-size:14.5px;background:var(--card)}
+table.spec caption{white-space:normal}
+table.spec caption{caption-side:top;text-align:left;
+  font-family:ui-monospace,monospace;font-size:10.5px;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--ink-3);padding:13px 15px 9px;
+  border-bottom:1px solid var(--line)}
+table.spec th{text-align:left;font-family:ui-monospace,monospace;
+  font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--ink-3);font-weight:400;padding:11px 15px 9px;
+  border-bottom:1px solid var(--line);white-space:nowrap}
+table.spec td{padding:12px 15px;border-bottom:1px solid var(--hair);
+  vertical-align:top;color:var(--ink-2)}
+table.spec tr:last-child td{border-bottom:none}
+/* The group heading is a row, so the table stays one scroll frame
+   rather than several tables each with their own overflow box. */
+table.spec tr.grp td{background:var(--soft);font-family:ui-monospace,monospace;
+  font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--ink-3);padding:9px 15px;border-bottom:1px solid var(--line)}
+table.spec td.f{color:var(--ink);white-space:nowrap}
+/* Values wrap, but never mid-figure. `nowrap` here forced "MacPherson
+   strut front, torsion beam rear" onto one line and pushed the column
+   to 388px, which is what made the table overflow at desktop width.
+   `balance` keeps "1,160–1,230 kg" and "22.40 or 35.84 kWh" whole
+   because they contain no spaces a break could land in. */
+table.spec td.v{font-family:ui-monospace,monospace;font-weight:600;
+  color:var(--ink);font-variant-numeric:tabular-nums;
+  white-space:normal;text-wrap:balance;min-width:20ch}
+/* The figure itself never breaks, however narrow the column gets: a
+   kerb weight split as "1,160–" / "1,230 kg" reads as two numbers, and
+   this table exists to make figures legible. Only the caveat below it
+   reflows. */
+table.spec td.v>.fig{white-space:nowrap}
+/* ...except a prose value like "MacPherson strut front, torsion beam
+   rear", which has no digits to split and must wrap or it forces the
+   column wider than the phone. Marked at build time, not guessed in
+   CSS. */
+table.spec td.v>.fig.prose{white-space:normal}
+/* Named `caveat`, not `note`: `.note` is the page's callout box, and a
+   spec caveat inheriting it rendered every note as a tinted panel with
+   a left border, which is what made the table taller than the cards it
+   replaced. */
+table.spec .caveat{display:block;font-family:inherit;font-weight:400;
+  font-size:12.5px;color:var(--ink-3);white-space:normal;margin-top:3px;
+  background:none;border:0;padding:0}
+table.spec td.s{white-space:nowrap}
+table.spec td.s a{color:var(--accent);text-decoration:none;
+  font-family:ui-monospace,monospace;font-size:11.5px}
+table.spec td.s a:hover{text-decoration:underline}
+/* Discussed rows read heavier than quiet ones: that contrast is the
+   whole reason for the table. */
+table.spec tr.said td{background:#F8FAFD}
+table.spec td.c{font-size:13.5px}
+table.spec td.c .none{color:var(--ink-3);font-size:13px}
+table.spec td.c a{color:var(--accent);text-decoration:none}
+table.spec td.c a:hover{text-decoration:underline}
+table.spec td.c .n{font-family:ui-monospace,monospace;font-size:11.5px;
+  color:var(--ink-3);white-space:nowrap}
+table.spec td.c ul{list-style:none;padding:0;margin:0}
+table.spec td.c li{padding:2px 0}
+/* Negative share as a hairline bar: a reader scanning the column sees
+   which figures drew heat without reading a percentage. */
+.heat{display:inline-block;width:40px;height:4px;background:var(--hair);
+  margin-left:7px;vertical-align:middle;position:relative}
+.heat i{display:block;height:4px;background:#A81C19}
 @media(max-width:560px){.toc{columns:1}
   h1{font-size:26px}
-  .wrap{padding:34px 18px 70px}
-  .spec-top{flex-direction:column;gap:2px}}
+  .wrap{padding:34px 18px 70px}}
 """
 
 
@@ -347,8 +390,8 @@ def _theme_card(cluster: dict) -> str:
 </div>"""
 
 
-def _spec_block(spec, clusters: list[dict]) -> str:
-    """One figure, with whatever the comment section said about it.
+def _spec_row(spec, clusters: list[dict]) -> str:
+    """One figure as a table row, with what the comment section said.
 
     The themes are named and counted, not summarised: a count is a fact
     about the corpus, and a summary here would be a second opinion about
@@ -360,51 +403,60 @@ def _spec_block(spec, clusters: list[dict]) -> str:
 
     themes = specs_mod.themes_for(spec, clusters)
 
-    said = ""
     if themes:
-        total = sum(t.get("size", 0) for t in themes)
         items = "".join(
             f'<li><a href="#theme-{t["cluster_id"]}">'
-            f'{html.escape(t.get("llm_label") or t.get("aspect_label", "theme"))}</a> '
-            f'<span class="n">· {t.get("size", 0):,} comments · '
-            f'{t.get("sentiment", {}).get("negative", 0):.0%} negative</span></li>'
-            for t in themes[:4]
+            f'{html.escape(t.get("llm_label") or t.get("aspect_label", "theme"))}</a>'
+            f'<span class="n"> {t.get("size", 0):,}'
+            f'<span class="heat" title="'
+            f'{t.get("sentiment", {}).get("negative", 0):.0%} negative">'
+            f'<i style="width:{t.get("sentiment", {}).get("negative", 0) * 100:.0f}%">'
+            f"</i></span></span></li>"
+            for t in themes[:3]
         )
-        said = (
-            f'<div class="spec-said"><p class="hd">'
-            f'What the comment section said · {total:,} comments</p>'
-            f"<ul>{items}</ul></div>"
+        more = (
+            f'<li class="n">+{len(themes) - 3} more</li>'
+            if len(themes) > 3 else ""
         )
+        said = f"<ul>{items}{more}</ul>"
+        row_class = ' class="said"'
     else:
         # Said plainly rather than left blank. A figure nobody discussed
         # is a true fact about the car and an absence in the corpus, and
         # the absence is itself worth knowing — it is what the `defect`
         # angle failed to notice.
-        said = (
-            '<p class="spec-quiet">Nothing in this corpus discussed '
-            "this.</p>"
-        )
+        said = '<span class="none">—</span>'
+        row_class = ""
 
     note = (
-        f'<p class="spec-note">{html.escape(spec.note)}</p>'
+        f'<span class="caveat">{html.escape(spec.note)}</span>'
         if spec.note else ""
     )
+
+    # A value with no digit is prose, not a figure, and may wrap. Decided
+    # here rather than in CSS because only the data knows which it is.
+    fig_cls = "" if any(ch.isdigit() for ch in spec.value) else " prose"
+    # The link text is short and the full name is the title, because the
+    # same source repeats on nearly every row: spelled out, it became a
+    # column of identical noise wider than the figures themselves. The
+    # source still has to be one click away — that is the rule — but it
+    # does not have to shout on all fifteen rows.
     src_name = html.escape(spec.source_name or "source")
 
-    return f"""<div class="spec">
-  <div class="spec-top">
-    <span class="spec-label">{html.escape(spec.label)}</span>
-    <span class="spec-value">{html.escape(spec.value)}</span>
-  </div>
-  {note}
-  <p class="spec-src">via <a href="{html.escape(spec.source_url)}"
-     target="_blank" rel="noopener">{src_name} ↗</a></p>
-  {said}
-</div>"""
+    return (
+        f"<tr{row_class}>"
+        f'<td class="f">{html.escape(spec.label)}</td>'
+        f'<td class="v"><span class="fig{fig_cls}">'
+        f"{html.escape(spec.value)}</span>{note}</td>"
+        f'<td class="c">{said}</td>'
+        f'<td class="s"><a href="{html.escape(spec.source_url)}" '
+        f'target="_blank" rel="noopener" title="{src_name}">check ↗</a></td>'
+        f"</tr>"
+    )
 
 
 def build_spec_section(specs: list, clusters: list[dict]) -> str:
-    """The car's published figures, grouped, beside the discussion.
+    """The car's published figures as one table, beside the discussion.
 
     Returns "" when there are no specs, so a subject without a
     specs.json renders exactly as it did before.
@@ -415,21 +467,55 @@ def build_spec_section(specs: list, clusters: list[dict]) -> str:
     from opitrics.analyze import specs as specs_mod
 
     discussed, total = specs_mod.coverage(specs, clusters)
-    groups = "\n".join(
-        f'<div class="specgroup"><h3>{html.escape(name)}</h3>'
-        + "\n".join(_spec_block(s, clusters) for s in items)
-        + "</div>"
-        for name, items in specs_mod.by_group(specs)
-    )
+
+    # Groups are rows inside one table rather than separate tables: a
+    # phone gets one horizontal scroll frame instead of five, and the
+    # figure column stays aligned down the whole section.
+    body = ""
+    for name, items in specs_mod.by_group(specs):
+        body += f'<tr class="grp"><td colspan="4">{html.escape(name)}</td></tr>\n'
+        body += "\n".join(_spec_row(s, clusters) for s in items) + "\n"
+
+    # Credit the sources in the caption, since each row's link now reads
+    # "check" rather than spelling the source out. A reader must be able
+    # to see where the figures came from without hovering fifteen links.
+    # Names are counted past two rather than listed: the two BYD sources
+    # are a web page and a catalogue PDF, genuinely different documents
+    # that must not be merged into one label, but reading them both out
+    # made the caption longer than the header row.
+    names = sorted({s.source_name for s in specs if s.source_name})
+    if not names:
+        credit = ""
+    elif len(names) == 1:
+        credit = " · from " + html.escape(names[0])
+    else:
+        # Sources here are usually several documents from one maker, so
+        # the shortest name is the shared publisher and listing them all
+        # spells it out twice. Credit the publisher; the per-row link
+        # title names the exact document.
+        shortest = min(names, key=len)
+        if all(n.startswith(shortest) for n in names):
+            credit = f" · from {html.escape(shortest)}, linked per row"
+        else:
+            credit = f" · from {len(names)} sources, linked per row"
 
     return f"""
 <h2>The car itself</h2>
 <p style="color:var(--ink-2);margin:0 0 4px;max-width:66ch">
   What the manufacturer publishes, beside what the comment section made
-  of it. Every figure links to the page it was read from —
-  {discussed} of {total} were raised by commenters at all, and the ones
-  nobody mentioned say so.
+  of it. {discussed} of {total} figures were raised by commenters at
+  all; the rest show a dash. The bar is the share of that theme reading
+  negative.
 </p>
+<div class="spectable">
+<table class="spec">
+  <caption>Manufacturer figures · {discussed} of {total} discussed{credit}</caption>
+  <thead><tr><th>figure</th><th>published</th>
+    <th>what the comment section said</th><th>source</th></tr></thead>
+  <tbody>
+{body}  </tbody>
+</table>
+</div>
 <div class="note">
   <b>These are the manufacturer's figures, not ours.</b> They are typed
   in by hand from the pages linked on each row, and nothing here is
@@ -437,8 +523,7 @@ def build_spec_section(specs: list, clusters: list[dict]) -> str:
   sitting side by side is not a verdict on either: the comments are
   opinions with permalinks, the specs are claims with sources, and
   deciding between them is the reader's business.
-</div>
-{groups}"""
+</div>"""
 
 
 def build_report_page(
