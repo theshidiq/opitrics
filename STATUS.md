@@ -9,8 +9,50 @@ record of *decisions*. This file is the record of *state* — what is
 done, what is blocked, and on whom. If something here stops being
 state and becomes a decision, move it there and drop it from here.
 
-Last updated 2026-09-17 (content evaluated before starting a second
-car; verdict card added and forced onto the `car` angle).
+Last updated 2026-09-17 (four corpora analysed; comparison
+cards built; sources pages live for all four).
+
+## Four corpora, and the comparison series
+
+Built 2026-09-17. Sources pages live for all four; 888 of 10,000 quota
+spent, so the whole set cost under a tenth of one day's allowance.
+
+|                | clustered | about car | arguing | positive | unscorable |
+|----------------|----------:|----------:|--------:|---------:|-----------:|
+| BYD Racco      |    14,821 |       78% |     22% |      12% |        24% |
+| Suzuki e Sky   |     2,749 |       89% |     11% |      38% |         7% |
+| Nissan Sakura  |     2,939 |       91% |      9% |      33% |        10% |
+| Honda N-Box    |     1,324 |       84% |     16% |      44% |         2% |
+
+**The Racco is the outlier on every metric**, and that is the series:
+three times the arguing of the Sakura, a third the positivity, twelve
+times the sarcasm of the N-Box. One Chinese car in a Japanese segment
+produces a different kind of comment section, not merely a busier one.
+
+`scripts/compare.py` renders a two-car card from analyses that already
+exist. No LLM, no quota. Three cards built: e Sky, Sakura, N-Box, each
+against the Racco.
+
+**Everything is a share, never a count.** The corpora differ up to
+elevenfold, so comparing totals compares audience rather than opinion.
+The card prints both totals in its footer and the script warns when the
+ratio passes three.
+
+Average polarity is deliberately not a row. It would mix car themes
+with brand-nationality themes, and the four cars differ in exactly that
+mix, so one "how positive" figure would report a car as better liked
+when it is only less argued about.
+
+**The Sakura comparison has a story behind it**, verified rather than
+assumed: Hirohide Tagawa spent roughly 25 to 30 years at Nissan on
+product planning and engineering for the Dayz and the Sakura, and is
+now at BYD Auto Japan working on the Racco. The man who built Japan's
+best-selling kei EV built its Chinese rival. Sources are in the
+2026-05 and 2026-07 trade coverage; check them again before that claim
+reaches a card.
+
+Not built: the three-way card, which needs a different layout, and any
+shorts for the new subjects — ElevenLabs is exhausted until 24 Sep.
 
 ## Where this stands before the next car
 
