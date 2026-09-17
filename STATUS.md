@@ -9,8 +9,48 @@ record of *decisions*. This file is the record of *state* — what is
 done, what is blocked, and on whom. If something here stops being
 state and becomes a decision, move it there and drop it from here.
 
-Last updated 2026-08-27 (first thread live on X; disk state audited
-against what was actually published).
+Last updated 2026-09-17 (content evaluated before starting a second
+car; verdict card added and forced onto the `car` angle).
+
+## Where this stands before the next car
+
+One thread published, on X, three weeks ago. Nothing since. Everything
+else is built and sitting on disk.
+
+**The honest blocker is not quality, it is signal.** Every judgement
+about voice, pace and framing this month has been guesswork against
+one post with no retention data. A second car doubles the inventory
+and adds nothing to what is known about whether any of it works.
+Posting two or three of the current pieces would be worth more than
+another corpus.
+
+If the reason for a second car is that one car cannot sustain an
+account, that is a fair and separate call.
+
+**Content state, measured 2026-09-17:**
+
+| | state |
+|---|---|
+| 6 threads | all carry warnings. One had a fabricated quote (see below) |
+| 5 shorts | render clean, translations working, 140 to 178 wpm |
+| verdict card | new, forced onto `car`, renders correctly |
+| queue | `data/output/queue.json`, empty, driven by `scripts/schedule.py` |
+
+**The number-recitation rule has never held.** Four sessions of prompt
+edits, then a gate, then a retry, and every thread still trips it. That
+is no longer a bug to fix again — it is evidence the constraint is
+either wrong or cannot survive alongside a 16,000-character prompt.
+Decide which before spending another round on it.
+
+**`car` post 4 carried a fabricated quote** and `verify_quotes()`
+caught it: 徹底して became 徹底的に, one word changed in a real person's
+sentence. Same meaning, not their words. Worth keeping as the clearest
+example of why that gate exists — the model does not invent whole
+quotes any more, it improves real ones.
+
+Median thread post length drifted back to about 200 characters from the
+96 the narration work achieved. The voice fixes did not survive later
+regenerations.
 
 ## Accounts
 
@@ -343,10 +383,15 @@ hardcoded number outranks a rule about numbers every time. Worth
 grepping the other prompts for the same trap before it costs someone
 else the same afternoon.
 
-**Social (main assistant)** — the `quotes` thread is live on X, so the
-open questions are now the four remaining threads and how far apart
-they go, plus which of the five shorts leads and where. X is proven
-end to end; TikTok can publish today.
+**Social (main assistant)** — the `quotes` thread is live on X and
+nothing has gone out since 2026-08-26. There are now six threads and
+five shorts on disk, a queue that accepts them, and no retention data
+on any of it. X is proven end to end; TikTok can publish today.
+
+The decision that matters is not which piece is best. It is whether to
+post several imperfect ones and learn something, or keep polishing
+against a sample of one. Three weeks of the latter produced real
+improvements to the writing and zero evidence any of them matter.
 
 Editorial decisions made, not yet acted on:
 

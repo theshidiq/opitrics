@@ -27,6 +27,7 @@ from opitrics.ingest.db import Database  # noqa: E402
 from opitrics.render import cards as cards_mod  # noqa: E402
 from opitrics.render.story import (  # noqa: E402
     ANGLES,
+    _in_scope,
     check_dashes,
     check_number_density,
     check_quote_echo,
@@ -62,7 +63,7 @@ _STOPWORDS = {
 
 
 def _verdict_lists(
-    analysis: dict,
+    analysis: dict, scope: str = "all",
 ) -> tuple[list[tuple[str, int]], list[tuple[str, int]], str]:
     """The two columns of the praise-versus-criticism card.
 
@@ -78,7 +79,14 @@ def _verdict_lists(
     when they are arguing about where it was built. If a brand-origin
     theme makes the column, the card says so.
     """
-    clusters = analysis.get("clusters", [])
+    # Honour the angle's scope. The "car" angle promises in its brief to
+    # ignore brand-origin arguments entirely, and a verdict card built
+    # from the whole analysis would put "Nationalist brand trust debate"
+    # at the top of its criticism column — the thread contradicting its
+    # own premise in the one card a reader looks at first.
+    clusters = [
+        c for c in analysis.get("clusters", []) if _in_scope(c, scope)
+    ]
 
     def ranked(keep) -> list[dict]:
         return sorted(
@@ -94,20 +102,33 @@ def _verdict_lists(
     def label(cluster: dict) -> str:
         return cluster.get("llm_label") or cluster.get("aspect_label") or ""
 
-    top_complaints = complaints[:4]
-    origin = any(
-        w in label(c).lower()
-        for c in top_complaints
-        for w in ("nationalis", "brand trust", "origin", "chinese", "china")
-    )
+    # Brand-origin themes are about where the car was built, not about
+    # the car. `_in_scope` cannot see the difference — the aspect
+    # taxonomy files them as car themes and they pass the "car" scope —
+    # so the verdict card filters them by name. On the "car" angle they
+    # are dropped outright, because that angle's brief promises not to
+    # raise them. Elsewhere they stay, with the note explaining what
+    # they are.
+    origin_terms = ("nationalis", "brand trust", "origin", "chinese", "china")
+
+    def is_origin(cluster: dict) -> bool:
+        text = label(cluster).lower()
+        return any(term in text for term in origin_terms)
+
+    if scope == "car":
+        complaints = [c for c in complaints if not is_origin(c)]
+        praise = [c for c in praise if not is_origin(c)]
+
+    top_complaints = complaints[:3]
     note = (
         "Counted from comments, not buyers. Brand-origin arguments are not "
         "complaints about the vehicle."
-        if origin
-        else "Counted from comments, not buyers."
+        if any(is_origin(c) for c in top_complaints)
+        else "Counted from comments, not buyers. A comment section is not a "
+             "sample of anything."
     )
     return (
-        [(label(c), c["size"]) for c in praise[:4] if label(c)],
+        [(label(c), c["size"]) for c in praise[:3] if label(c)],
         [(label(c), c["size"]) for c in top_complaints if label(c)],
         note,
     )
@@ -385,6 +406,29 @@ def build_angle(
         return True
 
     print(f"  {DIM}rendering cards…{RESET}")
+
+    # The "car" angle always carries a verdict card. That angle asks
+    # "is it any good", and the two-column praise-against-criticism
+    # card answers it faster than anything else available — but left
+    # optional the model never once chose it out of five chart values,
+    # so it is assigned here rather than requested.
+    #
+    # It goes on a post with no quote: a quote card is evidence and a
+    # verdict card is a summary, and the summary must not displace the
+    # evidence. Preferring a middle post keeps it off the hook, where
+    # a summary would give away the thread before it starts.
+    if angle.key == "car" and not any(
+        p.chart == "verdict" for p in story.posts
+    ):
+        spare = [
+            p for p in story.posts[1:-1]
+            if not p.quote_original and not p.chart
+        ]
+        if spare:
+            spare[len(spare) // 2].chart = "verdict"
+        else:
+            print(f"  {YELLOW}no spare post for the verdict card{RESET}")
+
     # Only render a quote card when that specific quote passed the
     # verbatim check — a paraphrased quote on a card is a fabricated
     # statement attributed to a real person.
@@ -415,7 +459,7 @@ def build_angle(
             # Drawn from the analysis rather than read from a rendered
             # chart file, because it is a composition of two cluster
             # lists rather than a plot.
-            praise, complaints, note = _verdict_lists(analysis)
+            praise, complaints, note = _verdict_lists(analysis, angle.scope)
             if praise and complaints:
                 cards_mod.verdict_card(
                     praise, complaints, subject, path, note=note
