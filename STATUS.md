@@ -9,8 +9,8 @@ record of *decisions*. This file is the record of *state* — what is
 done, what is blocked, and on whom. If something here stops being
 state and becomes a decision, move it there and drop it from here.
 
-Last updated 2026-09-17 (four corpora analysed; comparison page live at
-`/compare/`; sources pages live for all four; site has an icon).
+Last updated 2026-09-17 (four corpora analysed; comparison page and
+specs on the report; sources pages live for all four; site has an icon).
 
 ## Four corpora, and the comparison series
 
@@ -358,6 +358,52 @@ to describe what is actually at the URL and explicitly not to promise a
 video list or a quote list. Rebuilt: five threads, longest post 279 of
 280, 27 quotes verbatim against the corpus, 23/23 translations clean.
 
+**Specs on the report: the car beside what was said about it.** Built
+2026-09-17. `opitrics.com/byd-racco/` now carries BYD's published
+figures, each paired with the themes that discussed it — kerb weight
+1,160–1,230 kg next to "Heavy weight criticism" (340 comments, 56%
+negative), battery capacity next to 1,154 comments of EV concern.
+
+Three rules, in `opitrics/analyze/specs.py`, and none is optional:
+
+- **A figure with no source URL does not render.** Same rule
+  `attach_sources` applies to quotes. A page mixing sourced comment
+  figures with unsourced spec figures teaches a visitor that some
+  numbers here cannot be checked, and then none of them can be.
+- **Nothing is computed, inferred or model-generated.** Typed in by
+  hand from the linked page. A model stating a kerb weight from memory
+  is the fabricated-quote failure with no corpus for `check_quotes()`
+  to check it against.
+- **A spec states, never judges.** "1,080 kg" is a fact; "heavy for the
+  class" is an opinion, and the only opinions published here belong to
+  commenters with permalinks.
+
+**`MIN_PAIRING_MARGIN` is a new gate and needs explaining, because
+`CLAUDE.md` records that a confidence gate on aspect mapping was tried
+and rejected.** That finding stands — it filtered the corpus and the
+margins overlapped. This governs one narrower claim. On the first
+render the suspension figure carried "Safety and fire risk fears" (286
+comments, 65% negative, margin 0.023, runner-up `tech.safety`), which
+implied the comment section attacked the suspension when it was
+worrying about battery fires. Citing a theme as evidence *about a
+figure* is stronger than mapping it to an aspect, so it needs the
+mapper to have been decisive. Pairings went 7 → 4 and all four are now
+real. A theme that fails the gate still appears in full in its own
+section.
+
+Only `byd-racco` has a `specs.json`. The other three render exactly as
+before — no file, no section. **`data/output/subjects/*/specs.json` is
+now git-tracked**, carved out of the `data/output/*` ignore: it is the
+one thing under `data/` that is not regenerable, since losing it means
+re-reading a catalogue rather than re-running a stage.
+
+Figures came from BYD Auto Japan's own catalogue PDF
+(`catalog_202607_v2`), whose text layer renders Japanese as mojibake
+but prints every number cleanly for all three trims. Per-trim prices
+are deliberately absent: only the base ¥2,145,000 is on a BYD page I
+could read, and the 300Plus/300Premium prices appear in trade coverage
+rather than a manufacturer source.
+
 **Icon and manifest.** `/icon.svg` and `/site.webmanifest`, linked from
 every page including the four subject reports and their audit pages.
 The icon is the avatar's `small` variant from `brand/make_assets.py`
@@ -401,6 +447,16 @@ demand signal" has to be true across the whole archive, retroactively.
 Every post is evidence in that conversation. A single loose line costs
 more later than it gains now.
 
+**The spec pairing added a new way to break this, so it is worth
+naming.** A price beside a complaint invites "so it won't sell", and a
+range figure beside charging worries invites "so buyers will reject
+it". Neither is a claim this project can make. The report page states
+explicitly that a figure and a complaint side by side is not a verdict
+on either, and that deciding between them is the reader's business —
+keep that framing in any thread or short built from a spec. The safe
+sentence is what the comment section said about a figure; the unsafe
+one is what the figure means for the car's prospects.
+
 What is genuinely sellable is **discourse analysis, not market
 research** — what the conversation about a car contains, with every
 claim traceable to a permalink. Nobody else does that verifiably; the
@@ -433,6 +489,19 @@ committed permanently to git history — so upload, publish, then delete
 the file in a follow-up commit rather than accumulating them. If that
 proves unacceptable, the fallback is a signed URL from any object store;
 it needs to live for minutes, not forever. Not built — say the word.
+
+**Specs for the other three** — `suzuki-e-sky`, `nissan-sakura`,
+`honda-n-box` have no `specs.json`, so their reports carry no spec
+section. Copy `byd-racco/specs.json` as the shape and fill it from each
+manufacturer's own page. Roughly fifteen rows each, and the `aspect`
+keys to join on are whatever that corpus actually mapped —
+`.venv/bin/python -c` over its `analysis.json` lists them. Nobody's
+yet; it is the obvious next step and it needs no quota.
+
+Worth doing for the Sakura first: it is the one with the Tagawa story
+behind it, and a spec table makes "the man who built Japan's
+best-selling kei EV built its Chinese rival" checkable on both cars
+rather than only narratable.
 
 **Pipeline** — the Japanese output path, if and when the Japanese arm
 starts. `brand/PROFILE.md` lists what must be true first; the headline
