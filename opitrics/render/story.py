@@ -878,8 +878,17 @@ def verify_quotes(story: Story, analysis: dict) -> list[str]:
 
 
 CORPUS_SUPERLATIVE = re.compile(
-    r"\b(?:the\s+)?(?:most[- ]liked|highest|biggest|largest|top)\b[^.?!]{0,60}?"
-    r"\b(?:in|of|across)\s+(?:the\s+)?"
+    # "most X" generally, not only the handful of superlatives first
+    # listed: a thread claimed "the one that got the most agreement in
+    # that whole thread" and passed, because "agreement" was not on the
+    # list and "that whole" is not "the whole".
+    # "Most of X" is a proportion, not a rank, so it is excluded by the
+    # negative lookahead. "The most agreement in X" is a rank and is
+    # caught.
+    r"\b(?:the\s+)?(?:most(?!\s+of\b)\b[- \w]{0,18}|highest|biggest"
+    r"|largest|top)\b"
+    r"[^.?!]{0,60}?"
+    r"\b(?:in|of|across)\s+(?:the\s+|that\s+|this\s+)?"
     r"(?:entire\s+|whole\s+|full\s+)?"
     r"(?:corpus|dataset|data\s?set|thread|comment\s?section|all\s+\d)",
     re.I,
