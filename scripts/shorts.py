@@ -684,6 +684,34 @@ def build_angle(
             except AudioError as exc:
                 print(f"  {YELLOW}line {i + 1}: {exc}{RESET}")
 
+    # A short with no voiceover is not a degraded short, it is a silent
+    # video, and one shipped that way: every line failed on an exhausted
+    # ElevenLabs quota, each printed a yellow warning, and the render
+    # completed anyway. Five silent files sat on disk looking finished
+    # and the flatness was diagnosed as an editorial problem for an
+    # afternoon before anyone checked the audio track.
+    #
+    # So this raises rather than warns. A missing short beats a silent
+    # one, which is the same reasoning check_quotes() already applies to
+    # a fabricated quote: the failure the pipeline must never do quietly
+    # is the one that still produces a plausible-looking file.
+    voiced = sum(1 for vo in narration if vo)
+    if lines and not voiced:
+        raise SystemExit(
+            f"\n{RED}no line was voiced — refusing to render a silent "
+            f"short{RESET}\n{DIM}Every speak() call failed. The usual "
+            f"cause is an exhausted ElevenLabs quota; the errors above "
+            f"say which.{RESET}\n"
+        )
+    if voiced < len(lines):
+        # A partial is worse than either: the viewer hears half a script
+        # and reads cards for the rest, with no signal that anything is
+        # missing.
+        raise SystemExit(
+            f"\n{RED}only {voiced} of {len(lines)} lines were voiced — "
+            f"refusing to render a half-silent short{RESET}\n"
+        )
+
     # The tail here is small on purpose. A card that lingers after its
     # line has finished is dead air, and dead air is where a scrolling
     # viewer leaves. 0.25s reads as a beat; 0.6s read as a stall.
