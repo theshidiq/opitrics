@@ -46,6 +46,76 @@ CHECKOUT = Path.home() / ".opitrics" / REPO
 # is exactly why this is a constant and not a flag.
 DOMAIN = "opitrics.com"
 
+# The mark, as SVG: two bars each divided at a different point. Same
+# geometry as brand/make_assets.py's `small` avatar variant — thicker
+# bars, wider inset, tighter notch — because that variant was already
+# tuned by looking at a 24px proof, and a favicon is that problem
+# exactly. Do not substitute the large variant: at 16px its divisions
+# close up and the mark flattens into two blue smudges.
+#
+# Neither fraction sits near 0.5. The asymmetry is the content — a
+# comment section that divides evenly is the one result the data
+# essentially never gives, and a centred mark would claim it.
+#
+# SVG rather than .ico so one file serves every size. On a 32-unit grid:
+# inset 0.205 → x from 6.56 to 25.44; bar_h 0.215 → 6.88; gap 0.095 →
+# 3.04; notch 0.024 → 0.77.
+FAVICON_SVG = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+<rect width="32" height="32" fill="#000000"/>
+<rect x="6.56" y="7.54" width="12.34" height="6.88" fill="#FFFFFF"/>
+<rect x="20.44" y="7.54" width="5.00" height="6.88" fill="#0546A8"/>
+<rect x="6.56" y="17.58" width="7.16" height="6.88" fill="#FFFFFF"/>
+<rect x="15.26" y="17.58" width="10.18" height="6.88" fill="#0546A8"/>
+</svg>"""
+
+# One manifest for the whole site. `display: browser` rather than
+# standalone: this is pages to read, not an app, and a standalone
+# install would strip the URL bar from a site whose entire argument is
+# that you can check where you are and where a link goes.
+WEBMANIFEST = {
+    "name": "Opitrics — opinion metrics",
+    "short_name": "Opitrics",
+    "description": (
+        "Analyses of what YouTube comment sections say about cars, with "
+        "every quote linked to the original comment."
+    ),
+    "start_url": "/",
+    "scope": "/",
+    "display": "browser",
+    "background_color": "#FFFFFF",
+    "theme_color": "#FFFFFF",
+    "icons": [
+        {
+            "src": "/icon.svg",
+            "type": "image/svg+xml",
+            "sizes": "any",
+            "purpose": "any",
+        }
+    ],
+}
+
+
+def head_tags(title: str, description: str, path: str = "/") -> str:
+    """Icon, manifest and social-card tags, identical on every page.
+
+    `theme_color` is white to match the ground rather than the accent:
+    a blue browser chrome above a white page reads as two surfaces, and
+    the palette work exists so the site reads as one publication.
+    """
+    url = f"https://{DOMAIN}{path}"
+    return f"""<link rel="icon" href="/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/icon.svg">
+<link rel="manifest" href="/site.webmanifest">
+<meta name="theme-color" content="#FFFFFF">
+<meta name="description" content="{description}">
+<link rel="canonical" href="{url}">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Opitrics">
+<meta property="og:title" content="{title}">
+<meta property="og:description" content="{description}">
+<meta property="og:url" content="{url}">
+<meta name="twitter:card" content="summary">"""
+
 
 def run(args: list[str], cwd: Path | None = None) -> tuple[int, str]:
     proc = subprocess.run(
@@ -135,6 +205,39 @@ ul.plain li:before{content:"—";position:absolute;left:0;color:#5A5A5A}
 .lede{font-size:17px}
 .updated{font-family:ui-monospace,monospace;font-size:12px;color:#5A5A5A;
  letter-spacing:.06em;text-transform:uppercase}
+
+/* ── comparison ─────────────────────────────────────────────
+   The four-way table scrolls inside its own box rather than
+   widening the page: five columns of figures cannot compress to
+   390px without the numbers wrapping mid-digit. */
+.tablewrap{overflow-x:auto;margin:22px 0;border:1px solid #BFBFBF}
+table.cmp{width:100%;min-width:560px;border-collapse:collapse;
+ font-size:14.5px;background:#FFFFFF}
+table.cmp th{text-align:right;font-family:ui-monospace,monospace;
+ font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;
+ color:#5A5A5A;font-weight:400;padding:13px 14px 10px;
+ border-bottom:1px solid #BFBFBF;white-space:nowrap}
+table.cmp th:first-child{text-align:left}
+table.cmp td{padding:12px 14px;border-bottom:1px solid #E0E0E0;
+ color:#000000;text-align:right;font-family:ui-monospace,monospace;
+ font-variant-numeric:tabular-nums;white-space:nowrap}
+table.cmp td:first-child{text-align:left;font-family:inherit;
+ color:#3D3D3D}
+table.cmp tr:last-child td{border-bottom:none}
+table.cmp td a{color:#0546A8;text-decoration:none;font-weight:600}
+table.cmp td a:hover{text-decoration:underline}
+table.cmp .out{font-weight:700}
+table.cmp tbody tr:hover td{background:#F4F4F4}
+figure.card{margin:26px 0 0}
+figure.card img{display:block;width:100%;height:auto;
+ border:1px solid #BFBFBF}
+figure.card figcaption{font-size:13.5px;color:#5A5A5A;margin-top:9px;
+ max-width:70ch}
+figure.card figcaption a{color:#0546A8}
+.callout{border-left:2px solid #0546A8;background:#F1F5FB;
+ padding:15px 19px;margin:24px 0;font-size:15px;color:#3D3D3D}
+.callout b{color:#000000}
+.callout.warn{border-left-color:#8A5A00;background:#FBF6EE}
 footer{margin-top:48px;padding-top:20px;border-top:1px solid #BFBFBF;
  color:#5A5A5A;font-size:13.5px}
 footer p{color:inherit;margin:0 0 10px;max-width:62ch}
@@ -143,12 +246,13 @@ footer a{color:#0546A8}
 """
 
 
-def _page(title: str, body: str) -> str:
+def _page(title: str, head: str, body: str) -> str:
     """One shell for the small standalone pages."""
     return f"""<!doctype html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>{title}</title>
+{head}
 <style>{PAGE_CSS}</style></head><body><div class="wrap">
 {body}
 </div></body></html>"""
@@ -163,7 +267,12 @@ def privacy_page() -> str:
     thing a visitor cannot see, so it is stated plainly rather than
     rounded down to "we collect nothing".
     """
-    return _page("Privacy — Opitrics", f"""
+    return _page("Privacy — Opitrics", head_tags(
+        "Privacy — Opitrics",
+        "This site sets no cookies, runs no analytics and has no script "
+        "tag on any page.",
+        "/privacy/",
+    ), f"""
 <h1>Privacy</h1>
 <p class="updated">Last updated {datetime.now().strftime('%-d %B %Y')}</p>
 <p class="lede">This site collects nothing about you. That is not a
@@ -214,7 +323,12 @@ and it will be taken down. No justification is needed.</p>
 
 def terms_page() -> str:
     """Short, and mostly about the limits of what the numbers mean."""
-    return _page("Terms — Opitrics", f"""
+    return _page("Terms — Opitrics", head_tags(
+        "Terms — Opitrics",
+        "What the numbers here mean and do not mean, how to report an "
+        "error, and the terms for reusing a figure.",
+        "/terms/",
+    ), f"""
 <h1>Terms of use</h1>
 <p class="updated">Last updated {datetime.now().strftime('%-d %B %Y')}</p>
 <p class="lede">This site publishes analyses of public YouTube comment
@@ -261,6 +375,166 @@ made on the basis of them are yours.</p>
 <footer><p><a href="/">Opitrics sources</a> · <a href="/privacy">Privacy</a></p></footer>""")
 
 
+def compare_page(rows: list[dict], cards: list[dict]) -> str:
+    """The comparison, with every figure linking to the corpus behind it.
+
+    This page exists because the cards promise something the site could
+    not deliver. Each card's footer reads "every number links to the
+    comments it came from" — and until there was a page around them,
+    those numbers linked nowhere. A figure here is a link to the subject
+    page that produced it, which is the whole claim.
+
+    Shares, never counts, and the reason is louder here than on a card:
+    the four corpora differ elevenfold, so a table of totals would rank
+    these cars by how much they are watched.
+    """
+    import html
+
+    if not rows:
+        return ""
+
+    # Widest corpus against narrowest — stated rather than left for a
+    # reader to work out, because it is the caveat that governs every
+    # figure on the page.
+    sizes = [r["clustered"] for r in rows]
+    ratio = max(sizes) / max(min(sizes), 1)
+
+    metric_cols = [
+        ("about_car", "about the car"),
+        ("meta", "arguing"),
+        ("positive", "reads positive"),
+        ("unscorable", "unscorable"),
+    ]
+
+    # The outlier gets marked per column, but only where it is actually
+    # extreme rather than merely first in sort order.
+    def is_outlier(key: str, value: float) -> bool:
+        vals = sorted(r[key] for r in rows)
+        if len(vals) < 3:
+            return False
+        rest = [v for v in vals if v != value]
+        if not rest:
+            return False
+        # Extreme at either end, and clear of the next value by more
+        # than the spread among the remaining cars.
+        spread = max(rest) - min(rest)
+        return (
+            value == vals[-1] and value - vals[-2] > spread
+        ) or (
+            value == vals[0] and vals[1] - value > spread
+        )
+
+    head = "".join(f"<th>{html.escape(label)}</th>" for _, label in metric_cols)
+    body = ""
+    for r in rows:
+        cells = ""
+        for key, _ in metric_cols:
+            cls = ' class="out"' if is_outlier(key, r[key]) else ""
+            cells += f"<td{cls}>{r[key]:.0f}%</td>"
+        body += (
+            f'<tr><td><a href="/{html.escape(r["subject"])}/">'
+            f'{html.escape(r["name"])}</a></td>'
+            f'<td>{r["clustered"]:,}</td>{cells}</tr>\n'
+        )
+
+    card_figures = "\n".join(
+        f'''<figure class="card">
+  <img src="{html.escape(c["file"])}" alt="{html.escape(c["alt"])}" loading="lazy">
+  <figcaption>{html.escape(c["caption"])}
+    Check either corpus: <a href="/{html.escape(c["left"])}/">{html.escape(c["left_name"])}</a>
+    · <a href="/{html.escape(c["right"])}/">{html.escape(c["right_name"])}</a></figcaption>
+</figure>'''
+        for c in cards
+    )
+
+    ratio_note = (
+        f'<div class="callout warn"><b>The corpora are not the same '
+        f'size.</b> The largest is {ratio:.0f}× the smallest, so every '
+        f'figure here is a share of that car\'s own comments. A table of '
+        f'totals would rank these cars by how much they are watched, '
+        f'which is not what any of them measures.</div>'
+        if ratio > 3 else ""
+    )
+
+    return _page(
+        "Compared — Opitrics",
+        head_tags(
+            "One Chinese car in a Japanese segment",
+            "Four kei-car comment sections compared by share: how much is "
+            "about the car, how much is arguing, and how much reads positive.",
+            "/compare/",
+        ),
+        f"""
+<h1>One Chinese car in a Japanese segment</h1>
+<p class="updated">{len(rows)} corpora · {sum(sizes):,} comments analysed</p>
+<p class="lede">Four kei cars, four comment sections, the same four
+questions asked of each. The BYD Racco sits at the extreme of all four,
+and on two of them it is clear of the other three by more than they
+differ from each other. It is also the only car here that is not
+Japanese.</p>
+
+{ratio_note}
+
+<h2>The four, side by side</h2>
+<p>Every figure is a share of that car's own clustered comments. Follow a
+car's name to the analysis and the comments behind it.</p>
+<div class="tablewrap">
+<table class="cmp">
+  <thead><tr><th>car</th><th>comments</th>{head}</tr></thead>
+  <tbody>
+{body}  </tbody>
+</table>
+</div>
+<p style="font-size:13.5px;color:#5A5A5A">Bold marks a car that sits
+clear of the other three on that measure — extreme, not merely highest.
+<b>About the car</b> is the share on the vehicle rather than the video or
+its presenter. <b>Arguing</b> is the remainder. <b>Reads positive</b> and
+<b>unscorable</b> are shares of comments in themes scored positive, and
+in themes flagged too sarcastic to score.</p>
+
+<h2>What the split says</h2>
+<p>Three of these cars produce a comment section about a car. The fourth
+produces an argument about where it was built. A fifth of the Racco's
+comments are not about the vehicle at all, and a quarter are too
+sarcastic to score — that sarcasm share is ten times the N-Box's, and
+the positive share is under a third of it.</p>
+<p>The two clear results are sentiment, not subject matter. On how much
+of the conversation is about the car, the Racco leads but the three
+Japanese cars differ among themselves by as much, so that gap is not
+doing the work. What separates the Racco is <em>how</em> its comment
+section talks, not what it talks about.</p>
+<p>That is the finding no single corpus gives you: not that the Racco is
+disliked, but that it is <em>argued about</em> in a way its rivals are
+not.</p>
+
+<h2>Each pair in full</h2>
+{card_figures}
+
+<h2>What this does not measure</h2>
+<div class="callout">
+<b>These are comment sections, not buyers.</b> People who comment are not
+people who buy, and they skew toward enthusiasts and strong opinions.
+Nothing here says anything about sales, demand, or which car is better.
+<br><br>
+<b>There is no single "how positive" number</b>, deliberately. Average
+polarity across a corpus mixes themes about the car with themes about
+the brand's nationality, and these four differ in exactly that mix — so
+one warmth figure would report a car as better liked when it is only
+less argued about.
+<br><br>
+<b>Sarcasm detection is weak, particularly in Japanese.</b> The
+unscorable column is that uncertainty made visible rather than hidden
+inside another number.
+</div>
+
+<footer><p><a href="/">All analyses</a> · <a href="/terms">Terms</a> ·
+<a href="/privacy">Privacy</a> ·
+<a href="mailto:{CONTACT_EMAIL}">{CONTACT_EMAIL}</a></p>
+<p>Comment authors are not named. The permalink is what makes a quote
+checkable, so the handle is withheld.</p></footer>""",
+    )
+
+
 def index_page(entries: list[dict]) -> str:
     """A plain index so the repo root is not a 404."""
     import html
@@ -271,16 +545,31 @@ def index_page(entries: list[dict]) -> str:
         f' · {html.escape(e["updated"])}</span></li>'
         for e in entries
     )
+    compare_link = (
+        '<p style="margin-top:26px"><a href="/compare/" '
+        'style="font-weight:600">Compare all '
+        f'{len(entries)} side by side →</a><br>'
+        '<span style="color:#5A5A5A;font-size:13.5px">The same four '
+        'questions asked of each corpus, as shares.</span></p>'
+        if len(entries) > 1 else ""
+    )
     return f"""<!doctype html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Opitrics — sources</title>
+{head_tags(
+    "Opitrics — comment analysis with the receipts",
+    "Analyses of what YouTube comment sections say about cars, with every "
+    "quote linked to the original comment.",
+    "/",
+)}
 <style>{PAGE_CSS}</style></head><body><div class="wrap">
 <h1>Opitrics — sources</h1>
 <p>Every comment analysis published under this name has a page here listing
 the videos it read and every comment it quoted, each linking to the original
 on YouTube. Nothing asks to be believed; click a quote and check it.</p>
 <ul>{rows}</ul>
+{compare_link}
 <footer><p>Comment authors are not named. The permalink is what makes a quote
 checkable, so the handle is withheld.</p>
 <p>Opitrics — opinion metrics. It reads what people say and counts it. It does
@@ -366,10 +655,29 @@ def main() -> int:
             "comments": totals.get("clustered", 0),
             "videos": _video_count(sp),
             "updated": datetime.now().strftime("%Y-%m-%d"),
+            "analysis": analysis,
+            "content_dir": sp.content_dir,
         })
         print(f"  {GREEN}✓{RESET} {sp.subject}")
 
     (CHECKOUT / "index.html").write_text(index_page(entries), encoding="utf-8")
+
+    # ── the comparison ──────────────────────────────────────
+    # Figures come from compare.py's own metrics(), not from a table
+    # retyped here: the page and the cards must not be able to disagree,
+    # and a card that contradicts the table beside it would discredit
+    # both on the one page whose subject is a comparison.
+    cmp_rows, cmp_cards = _comparison(entries)
+    if cmp_rows:
+        page_dir = CHECKOUT / "compare"
+        page_dir.mkdir(parents=True, exist_ok=True)
+        for card in cmp_cards:
+            shutil.copy2(card.pop("src"), page_dir / card["file"])
+        (page_dir / "index.html").write_text(
+            compare_page(cmp_rows, cmp_cards), encoding="utf-8"
+        )
+        print(f"  {GREEN}✓{RESET} compare "
+              f"{DIM}({len(cmp_rows)} corpora, {len(cmp_cards)} cards){RESET}")
 
     # /terms and /privacy rather than /terms.html — a directory with an
     # index.html gives the extensionless URL platforms ask for, and the
@@ -382,6 +690,11 @@ def main() -> int:
     # Skip Jekyll — it would try to process these as templates.
     (CHECKOUT / ".nojekyll").write_text("", encoding="utf-8")
     (CHECKOUT / "CNAME").write_text(f"{DOMAIN}\n", encoding="utf-8")
+    (CHECKOUT / "icon.svg").write_text(FAVICON_SVG + "\n", encoding="utf-8")
+    (CHECKOUT / "site.webmanifest").write_text(
+        json.dumps(WEBMANIFEST, indent=2, ensure_ascii=False) + "\n",
+        encoding="utf-8",
+    )
 
     # ── commit and push ─────────────────────────────────────
     run(["git", "add", "-A"], cwd=CHECKOUT)
@@ -408,6 +721,80 @@ def main() -> int:
     print(f"  python scripts/thread.py --subject {first['subject']} --all \\")
     print(f"    --sources-url https://{DOMAIN}/{first['subject']}/\n")
     return 0
+
+
+def _comparison(entries: list[dict]) -> tuple[list[dict], list[dict]]:
+    """Rows for the four-way table, and whichever pair cards exist.
+
+    Metrics come from `scripts/compare.py` so the page cannot disagree
+    with the cards it shows. Cards are discovered on disk rather than
+    listed here: whichever pairs have been rendered get a figure, and a
+    pair nobody built simply does not appear.
+    """
+    from importlib.machinery import SourceFileLoader
+
+    try:
+        cmp_mod = SourceFileLoader(
+            "_opitrics_compare",
+            str(Path(__file__).resolve().parent / "compare.py"),
+        ).load_module()
+    except Exception as exc:
+        print(f"  {YELLOW}comparison skipped:{RESET} {exc}")
+        return [], []
+
+    by_subject = {e["subject"]: e for e in entries}
+    rows: list[dict] = []
+    for e in entries:
+        if not e.get("analysis", {}).get("clusters"):
+            continue
+        try:
+            m = cmp_mod.metrics(e["analysis"])
+        except (KeyError, ZeroDivisionError) as exc:
+            print(f"  {YELLOW}no metrics for {e['subject']}:{RESET} {exc}")
+            continue
+        rows.append({"subject": e["subject"], "name": e["name"], **m})
+
+    if len(rows) < 2:
+        return [], []
+
+    # Largest corpus first: the outlier leads, and the reader meets the
+    # car the comparison is about before the ones it is measured against.
+    rows.sort(key=lambda r: -r["clustered"])
+
+    cards: list[dict] = []
+    for e in entries:
+        for path in sorted(Path(e["content_dir"]).glob("compare-*-vs-*.png")):
+            stem = path.stem[len("compare-"):]
+            if "-vs-" not in stem:
+                continue
+            left, right = stem.split("-vs-", 1)
+            if left not in by_subject or right not in by_subject:
+                continue
+            ln = by_subject[left]["name"]
+            rn = by_subject[right]["name"]
+            cards.append({
+                "src": path,
+                "file": path.name,
+                "left": left,
+                "right": right,
+                "left_name": ln,
+                "right_name": rn,
+                "alt": f"{ln} compared with {rn} across four shares",
+                "caption": f"{ln} against {rn}.",
+            })
+
+    # One card per pair, in table order, so the figures follow the rows.
+    order = {r["subject"]: i for i, r in enumerate(rows)}
+    seen: set[tuple[str, str]] = set()
+    unique: list[dict] = []
+    for c in sorted(cards, key=lambda c: order.get(c["right"], 99)):
+        key = tuple(sorted((c["left"], c["right"])))
+        if key in seen:
+            continue
+        seen.add(key)
+        unique.append(c)
+
+    return rows, unique
 
 
 def _video_count(sp) -> int:

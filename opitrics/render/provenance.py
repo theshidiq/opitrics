@@ -23,6 +23,15 @@ from pathlib import Path
 # pages already out in the world, so it lives here rather than inline.
 CONTACT_EMAIL = "info@opitrics.com"
 
+# Icon and manifest links, matching what deploy_sources.py writes at the
+# site root. Absolute paths: these pages live at /<subject>/ and
+# /<subject>/sources.html, so a relative href would resolve differently
+# per page and 404 on one of them.
+ICON_TAGS = """<link rel="icon" href="/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/icon.svg">
+<link rel="manifest" href="/site.webmanifest">
+<meta name="theme-color" content="#FFFFFF">"""
+
 
 def comment_url(video_id: str, comment_id: str) -> str:
     """A permalink to one comment.
@@ -385,6 +394,12 @@ def build_report_page(
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>{html.escape(display_name)} — what the comments say</title>
 <meta name="description" content="An analysis of {meta['raw']:,} YouTube comments about the {html.escape(display_name)}, with every quote linked to its source.">
+{ICON_TAGS}
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Opitrics">
+<meta property="og:title" content="What {html.escape(display_name)} comment sections actually say">
+<meta property="og:description" content="{meta['raw']:,} comments from {len(videos)} videos, grouped by meaning and scored for sentiment.">
+<meta name="twitter:card" content="summary">
 <style>{CSS}</style></head><body><div class="wrap">
 
 <header>
@@ -527,6 +542,8 @@ def build_audit_page(
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Sources · {html.escape(display_name)}</title>
+<meta name="description" content="Every video read and every quote used in the {html.escape(display_name)} analysis, each linking to the original comment on YouTube.">
+{ICON_TAGS}
 <style>{CSS}</style></head><body><div class="wrap">
 
 <header>
