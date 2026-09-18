@@ -82,12 +82,34 @@ def main() -> int:
     video_data.sort(key=lambda v: -v["comments"])
 
     fetched = min((v["fetched_at"] for v in videos), default="")[:10]
+
+    # Every visitor arrives from a thread or a video description, so they
+    # land on a subject page rather than the index. Without these links
+    # the page is a dead end: no route to the comparison, the other cars,
+    # or the audit page the post promised. Only subjects with an analysis
+    # are listed, since a link to a subject with no page would 404.
+    siblings = []
+    for sp in settings.workspace.list_subjects():
+        if sp.subject == args.subject or not sp.analysis.exists():
+            continue
+        try:
+            sib = json.loads(sp.analysis.read_text(encoding="utf-8"))
+        except json.JSONDecodeError:
+            continue
+        siblings.append({
+            "subject": sp.subject,
+            "name": sp.display_name,
+            "comments": sib.get("totals", {}).get("clustered", 0),
+        })
+    siblings.sort(key=lambda s: -s["comments"])
+
     html = build_audit_page(
         subject=args.subject,
         display_name=paths.display_name,
         analysis=analysis,
         videos=video_data,
         meta={"raw": len(rows), "fetched_on": fetched},
+        siblings=siblings,
     )
 
     out = paths.content_dir / "sources.html"
@@ -133,6 +155,7 @@ def main() -> int:
         charts=chart_paths,
         sources_url=args.sources_url or "sources.html",
         specs=spec_rows,
+        siblings=siblings,
     )
     report_out = paths.content_dir / "report-public.html"
     report_out.write_text(report_html, encoding="utf-8")

@@ -319,10 +319,141 @@ table.spec td.c li{padding:2px 0}
 .heat{display:inline-block;width:40px;height:4px;background:var(--hair);
   margin-left:7px;vertical-align:middle;position:relative}
 .heat i{display:block;height:4px;background:#A81C19}
+/* ── navigation ─────────────────────────────────────────────
+   Every visitor arrives from a thread or a description, landing on a
+   subject page rather than the index — so these pages were dead ends
+   with no route to the comparison, the other cars, or even the audit
+   page the post promised. All hrefs are absolute: the report sits at
+   /<subject>/ and its audit page at /<subject>/sources.html, so a
+   relative link would resolve differently on the two. */
+.sitenav{display:flex;align-items:baseline;gap:8px 16px;flex-wrap:wrap;
+  padding-bottom:13px;margin-bottom:22px;border-bottom:1px solid var(--line)}
+.sitenav .brand{font-family:ui-monospace,monospace;font-size:12px;
+  letter-spacing:.16em;text-transform:uppercase;color:var(--ink);
+  text-decoration:none;font-weight:600}
+.sitenav .brand:hover{color:var(--accent)}
+.sitenav nav{display:flex;gap:14px;flex-wrap:wrap;margin-left:auto}
+.sitenav nav a{font-size:13.5px;color:var(--ink-3);text-decoration:none}
+.sitenav nav a:hover{color:var(--accent)}
+.sitenav nav a[aria-current]{color:var(--ink);font-weight:600}
+/* The two views of one subject. This pair is the whole promise of the
+   project — a finding and the evidence for it — so it sits directly
+   under the title rather than in the nav row with the site links. */
+.views{display:flex;gap:0;margin:0 0 26px;border:1px solid var(--line)}
+.views a{flex:1;padding:10px 14px;font-size:13.5px;text-decoration:none;
+  color:var(--accent);border-right:1px solid var(--line)}
+.views a:last-child{border-right:0}
+.views a:hover{background:var(--soft)}
+.views a[aria-current]{background:var(--soft);color:var(--ink);
+  font-weight:600;cursor:default}
+.views b{display:block;font-size:13.5px}
+.views span{display:block;font-size:12px;color:var(--ink-3);
+  font-weight:400;margin-top:2px}
+/* Other subjects, so a reader who arrived for one car can find the
+   rest without going via the index. */
+.siblings{margin:30px 0 0;padding-top:20px;border-top:1px solid var(--line)}
+.siblings h3{font-size:11px;font-family:ui-monospace,monospace;
+  letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);
+  margin:0 0 11px}
+.siblings ul{list-style:none;padding:0;margin:0;display:flex;
+  gap:8px 10px;flex-wrap:wrap}
+.siblings li{margin:0}
+.siblings a{display:block;border:1px solid var(--line);padding:8px 12px;
+  font-size:14px;color:var(--accent);text-decoration:none}
+.siblings a:hover{background:var(--soft)}
+/* The compare link is prose, not one of the car chips: bordered and
+   full-width it read as a button, which it is not. */
+.siblings .all a{display:inline;border:0;padding:0}
+.siblings .all a:hover{background:none;text-decoration:underline}
+.siblings .n{color:var(--ink-3);font-family:ui-monospace,monospace;
+  font-size:11.5px}
 @media(max-width:560px){.toc{columns:1}
   h1{font-size:26px}
-  .wrap{padding:34px 18px 70px}}
+  .wrap{padding:34px 18px 70px}
+  .sitenav nav{margin-left:0;width:100%}
+  .views{flex-direction:column}
+  .views a{border-right:0;border-bottom:1px solid var(--line)}
+  .views a:last-child{border-bottom:0}}
 """
+
+
+def site_nav(here: str = "") -> str:
+    """The masthead: back to the index, and the site's other sections.
+
+    `here` marks the current section with aria-current, which both styles
+    it and tells a screen reader where it is. The comparison link is
+    included unconditionally — it exists whenever more than one subject
+    has been published, and a subject page is never published alone.
+    """
+    def link(href: str, label: str, key: str) -> str:
+        cur = ' aria-current="page"' if key == here else ""
+        return f'<a href="{href}"{cur}>{label}</a>'
+
+    return f"""<div class="sitenav">
+  <a class="brand" href="/">Opitrics</a>
+  <nav>
+    {link("/", "All analyses", "index")}
+    {link("/compare/", "Compared", "compare")}
+    {link("/terms", "Terms", "terms")}
+    {link("/privacy", "Privacy", "privacy")}
+  </nav>
+</div>"""
+
+
+def subject_views(subject: str, here: str) -> str:
+    """The two views of one subject: the finding, and the evidence.
+
+    These are the project's central pair, and until now neither page
+    linked to the other — so a reader on the audit page could not reach
+    the analysis it belongs to, and a reader on the report had to trust
+    a sentence in the method note to find the quotes.
+    """
+    def view(path: str, title: str, sub: str, key: str) -> str:
+        if key == here:
+            return (
+                f'<a aria-current="page"><b>{title}</b>'
+                f"<span>{sub}</span></a>"
+            )
+        return f'<a href="{path}"><b>{title}</b><span>{sub}</span></a>'
+
+    return f"""<div class="views">
+  {view(f"/{subject}/", "The analysis",
+        "Themes, charts and what the comment section said", "report")}
+  {view(f"/{subject}/sources.html", "The sources",
+        "Every video read and every quote, with permalinks", "sources")}
+</div>"""
+
+
+def sibling_subjects(subject: str, others: list[dict]) -> str:
+    """Links to the other subjects analysed, for a reader who arrived here.
+
+    `others` is [{"subject", "name", "comments"}]. Returns "" when there
+    are none, so a first-and-only subject renders without an empty
+    heading.
+    """
+    rest = [o for o in others if o.get("subject") != subject]
+    if not rest:
+        return ""
+
+    items = "\n".join(
+        f'<li><a href="/{html.escape(o["subject"])}/">'
+        f'{html.escape(o["name"])}'
+        + (
+            f' <span class="n">{o["comments"]:,}</span>'
+            if o.get("comments") else ""
+        )
+        + "</a></li>"
+        for o in rest
+    )
+    return f"""<div class="siblings">
+  <h3>Other cars analysed</h3>
+  <ul>
+{items}
+  </ul>
+  <p class="all" style="margin:13px 0 0;font-size:13.5px">
+    <a href="/compare/">See all {len(rest) + 1} compared side by side →</a>
+  </p>
+</div>"""
 
 
 def _embed(path: Path) -> str:
@@ -572,6 +703,7 @@ def build_report_page(
     charts: dict[str, Path] | None = None,
     sources_url: str = "",
     specs: list | None = None,
+    siblings: list[dict] | None = None,
 ) -> str:
     """The full public report: what was found, shown, and checkable.
 
@@ -650,7 +782,7 @@ def build_report_page(
 <meta property="og:description" content="{meta['raw']:,} comments from {len(videos)} videos, grouped by meaning and scored for sentiment.">
 <meta name="twitter:card" content="summary">
 <style>{CSS}</style></head><body><div class="wrap">
-
+{site_nav("")}
 <header>
   <p class="eyebrow">Comment analysis</p>
   <h1>What {html.escape(display_name)} comment sections actually say</h1>
@@ -659,6 +791,8 @@ def build_report_page(
     scored for sentiment. {headline}
   </p>
 </header>
+
+{subject_views(subject, "report")}
 
 <div class="stats">
   <div class="stat"><b>{meta['raw']:,}</b><span>comments read</span></div>
@@ -721,13 +855,19 @@ def build_report_page(
   {sources_link}
 </div>
 
+{sibling_subjects(subject, siblings or [])}
+
 <footer>
   {html.escape(display_name)} · {meta['raw']:,} comments from {len(videos)} videos ·
   fetched {html.escape(meta.get('fetched_on', ''))} ·
   generated {datetime.now().strftime('%Y-%m-%d')}<br>
   Comment authors are not named; the permalink is what makes a quote
   checkable. Spotted an error? <a href="mailto:{CONTACT_EMAIL}"
-  style="color:var(--accent)">{CONTACT_EMAIL}</a>
+  style="color:var(--accent)">{CONTACT_EMAIL}</a><br>
+  <a href="/" style="color:var(--accent)">All analyses</a> ·
+  <a href="/compare/" style="color:var(--accent)">Compared</a> ·
+  <a href="/terms" style="color:var(--accent)">Terms</a> ·
+  <a href="/privacy" style="color:var(--accent)">Privacy</a>
 </footer>
 </div></body></html>"""
 
@@ -744,6 +884,7 @@ def build_audit_page(
     analysis: dict,
     videos: list,
     meta: dict,
+    siblings: list[dict] | None = None,
 ) -> str:
     """A page a skeptic can use to check the work themselves."""
     totals = analysis["totals"]
@@ -796,7 +937,7 @@ def build_audit_page(
 <meta name="description" content="Every video read and every quote used in the {html.escape(display_name)} analysis, each linking to the original comment on YouTube.">
 {ICON_TAGS}
 <style>{CSS}</style></head><body><div class="wrap">
-
+{site_nav("")}
 <header>
   <p class="eyebrow">Check the work</p>
   <h1>Every number and quote behind the {html.escape(display_name)} analysis</h1>
@@ -807,6 +948,8 @@ def build_audit_page(
     that was invented would not resolve.
   </p>
 </header>
+
+{subject_views(subject, "sources")}
 
 <div class="stats">
   <div class="stat"><b>{meta['raw']:,}</b><span>comments fetched</span></div>
@@ -864,10 +1007,17 @@ def build_audit_page(
   publication, so a paraphrase cannot reach a graphic.
 </div>
 
+{sibling_subjects(subject, siblings or [])}
+
 <footer>
   {html.escape(display_name)} · {meta['raw']:,} comments from {len(videos)} videos ·
   fetched {html.escape(meta.get('fetched_on', ''))} ·
   generated {datetime.now().strftime('%Y-%m-%d')}<br>
-  Raw data and the code that produced this are available on request.
+  Raw data and the code that produced this are available on request.<br>
+  <a href="/{subject}/" style="color:var(--accent)">The analysis</a> ·
+  <a href="/" style="color:var(--accent)">All analyses</a> ·
+  <a href="/compare/" style="color:var(--accent)">Compared</a> ·
+  <a href="/terms" style="color:var(--accent)">Terms</a> ·
+  <a href="/privacy" style="color:var(--accent)">Privacy</a>
 </footer>
 </div></body></html>"""

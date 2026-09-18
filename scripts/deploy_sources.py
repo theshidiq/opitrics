@@ -23,7 +23,10 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from opitrics.config import settings  # noqa: E402
-from opitrics.render.provenance import CONTACT_EMAIL  # noqa: E402
+from opitrics.render.provenance import (  # noqa: E402
+    CONTACT_EMAIL,
+    site_nav,
+)
 
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 
@@ -206,6 +209,22 @@ ul.plain li:before{content:"—";position:absolute;left:0;color:#5A5A5A}
 .updated{font-family:ui-monospace,monospace;font-size:12px;color:#5A5A5A;
  letter-spacing:.06em;text-transform:uppercase}
 
+/* Masthead. Mirrors the .sitenav rules in opitrics/render/provenance.py
+   so every page on the domain carries the same one — these pages are
+   built here and the subject reports are built there, but a visitor
+   crossing between them should not notice a seam. */
+.sitenav{display:flex;align-items:baseline;gap:8px 16px;flex-wrap:wrap;
+ padding-bottom:13px;margin-bottom:22px;border-bottom:1px solid #BFBFBF}
+.sitenav .brand{font-family:ui-monospace,monospace;font-size:12px;
+ letter-spacing:.16em;text-transform:uppercase;color:#000000;
+ text-decoration:none;font-weight:600}
+.sitenav .brand:hover{color:#0546A8}
+.sitenav nav{display:flex;gap:14px;flex-wrap:wrap;margin-left:auto}
+.sitenav nav a{font-size:13.5px;color:#5A5A5A;text-decoration:none}
+.sitenav nav a:hover{color:#0546A8}
+.sitenav nav a[aria-current]{color:#000000;font-weight:600}
+@media(max-width:560px){.sitenav nav{margin-left:0;width:100%}}
+
 /* ── comparison ─────────────────────────────────────────────
    The four-way table scrolls inside its own box rather than
    widening the page: five columns of figures cannot compress to
@@ -246,14 +265,19 @@ footer a{color:#0546A8}
 """
 
 
-def _page(title: str, head: str, body: str) -> str:
-    """One shell for the small standalone pages."""
+def _page(title: str, head: str, body: str, here: str = "") -> str:
+    """One shell for the small standalone pages.
+
+    `here` marks the current section in the masthead, so a visitor can
+    see where they are rather than only where they can go.
+    """
     return f"""<!doctype html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>{title}</title>
 {head}
 <style>{PAGE_CSS}</style></head><body><div class="wrap">
+{site_nav(here)}
 {body}
 </div></body></html>"""
 
@@ -318,7 +342,7 @@ and it will be taken down. No justification is needed.</p>
 <h2>Contact</h2>
 <p><a href="mailto:{CONTACT_EMAIL}">{CONTACT_EMAIL}</a></p>
 
-<footer><p><a href="/">Opitrics sources</a> · <a href="/terms">Terms</a></p></footer>""")
+<footer><p><a href="/">Opitrics sources</a> · <a href="/terms">Terms</a></p></footer>""", here="privacy")
 
 
 def terms_page() -> str:
@@ -372,7 +396,7 @@ reads.</p>
 <p>The analyses are provided as they are, without warranty. Decisions
 made on the basis of them are yours.</p>
 
-<footer><p><a href="/">Opitrics sources</a> · <a href="/privacy">Privacy</a></p></footer>""")
+<footer><p><a href="/">Opitrics sources</a> · <a href="/privacy">Privacy</a></p></footer>""", here="terms")
 
 
 def compare_page(rows: list[dict], cards: list[dict]) -> str:
@@ -532,6 +556,7 @@ inside another number.
 <a href="mailto:{CONTACT_EMAIL}">{CONTACT_EMAIL}</a></p>
 <p>Comment authors are not named. The permalink is what makes a quote
 checkable, so the handle is withheld.</p></footer>""",
+        here="compare",
     )
 
 
@@ -564,6 +589,7 @@ def index_page(entries: list[dict]) -> str:
     "/",
 )}
 <style>{PAGE_CSS}</style></head><body><div class="wrap">
+{site_nav("index")}
 <h1>Opitrics — sources</h1>
 <p>Every comment analysis published under this name has a page here listing
 the videos it read and every comment it quoted, each linking to the original
