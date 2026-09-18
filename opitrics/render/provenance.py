@@ -252,6 +252,11 @@ blockquote .src a:hover{text-decoration:underline}
 table.spec{width:100%;min-width:560px;border-collapse:collapse;
   font-size:14.5px;background:var(--card)}
 table.spec caption{white-space:normal}
+/* With the per-row column gone this is the only route to the source, so
+   it needs to be tappable rather than a 12px-tall line of text. */
+table.spec caption a{color:var(--accent);text-decoration:none;
+  display:inline-block;padding:6px 2px}
+table.spec caption a:hover{text-decoration:underline}
 table.spec caption{caption-side:top;text-align:left;
   font-family:ui-monospace,monospace;font-size:10.5px;letter-spacing:.1em;
   text-transform:uppercase;color:var(--ink-3);padding:13px 15px 9px;
@@ -390,7 +395,7 @@ def _theme_card(cluster: dict) -> str:
 </div>"""
 
 
-def _spec_row(spec, clusters: list[dict]) -> str:
+def _spec_row(spec, clusters: list[dict], per_row_source: bool = True) -> str:
     """One figure as a table row, with what the comment section said.
 
     The themes are named and counted, not summarised: a count is a fact
@@ -398,6 +403,13 @@ def _spec_row(spec, clusters: list[dict]) -> str:
     a theme that already carries its own. Each links to its own card
     further down the page, so the figure is a way into the discussion
     rather than a replacement for it.
+
+    `per_row_source` is False when every figure in the table came from
+    one page. The rule is that a figure must be one click from its
+    source, not that the link be repeated — fourteen identical "check"
+    links is a column of noise, and the caption carries the link
+    instead. It stays True as soon as sources differ, because then the
+    column says something.
     """
     from opitrics.analyze import specs as specs_mod
 
@@ -436,17 +448,18 @@ def _spec_row(spec, clusters: list[dict]) -> str:
     # A value with no digit is prose, not a figure, and may wrap. Decided
     # here rather than in CSS because only the data knows which it is.
     fig_cls = "" if any(ch.isdigit() for ch in spec.value) else " prose"
-    # The link text is short and the full name is the title, because the
-    # same source repeats on nearly every row: spelled out, it became a
-    # column of identical noise wider than the figures themselves. The
-    # source still has to be one click away — that is the rule — but it
-    # does not have to shout on all fifteen rows.
-    #
-    # It must also land on a page, never a file. These figures were once
+    # A source must land on a page, never a file. These figures were once
     # sourced to a catalogue PDF, so every link fired a 5.5 MB download
     # rather than opening something readable, which is the wrong thing to
     # do to a reader who clicked to verify a number.
-    src_name = html.escape(spec.source_name or "source")
+    src = ""
+    if per_row_source:
+        src_name = html.escape(spec.source_name or "source")
+        src = (
+            f'<td class="s"><a href="{html.escape(spec.source_url)}" '
+            f'target="_blank" rel="noopener" title="{src_name}">'
+            f"check ↗</a></td>"
+        )
 
     return (
         f"<tr{row_class}>"
@@ -454,9 +467,7 @@ def _spec_row(spec, clusters: list[dict]) -> str:
         f'<td class="v"><span class="fig{fig_cls}">'
         f"{html.escape(spec.value)}</span>{note}</td>"
         f'<td class="c">{said}</td>'
-        f'<td class="s"><a href="{html.escape(spec.source_url)}" '
-        f'target="_blank" rel="noopener" title="{src_name}">check ↗</a></td>'
-        f"</tr>"
+        f"{src}</tr>"
     )
 
 
@@ -473,36 +484,57 @@ def build_spec_section(specs: list, clusters: list[dict]) -> str:
 
     discussed, total = specs_mod.coverage(specs, clusters)
 
+    # When every figure came from one page, the per-row link is fourteen
+    # copies of the same href — a column of noise as wide as the figures
+    # themselves. The rule is that a figure is one click from its source,
+    # not that the link is repeated, so the caption carries it once and
+    # the column disappears. As soon as two sources exist the column
+    # returns, because then it tells the reader which is which.
+    urls = {s.source_url for s in specs}
+    single = len(urls) == 1
+    per_row_source = not single
+    cols = 3 if single else 4
+
     # Groups are rows inside one table rather than separate tables: a
     # phone gets one horizontal scroll frame instead of five, and the
     # figure column stays aligned down the whole section.
     body = ""
     for name, items in specs_mod.by_group(specs):
-        body += f'<tr class="grp"><td colspan="4">{html.escape(name)}</td></tr>\n'
-        body += "\n".join(_spec_row(s, clusters) for s in items) + "\n"
+        body += (
+            f'<tr class="grp"><td colspan="{cols}">'
+            f"{html.escape(name)}</td></tr>\n"
+        )
+        body += "\n".join(
+            _spec_row(s, clusters, per_row_source) for s in items
+        ) + "\n"
 
-    # Credit the sources in the caption, since each row's link now reads
-    # "check" rather than spelling the source out. A reader must be able
-    # to see where the figures came from without hovering fifteen links.
-    # Names are counted past two rather than listed: the two BYD sources
-    # are a web page and a catalogue PDF, genuinely different documents
-    # that must not be merged into one label, but reading them both out
-    # made the caption longer than the header row.
     names = sorted({s.source_name for s in specs if s.source_name})
-    if not names:
-        credit = ""
-    elif len(names) == 1:
-        credit = " · from " + html.escape(names[0])
+    if single:
+        # One source: name it and link it in the caption, so the
+        # destination is stated once, prominently, instead of hidden in
+        # fourteen link titles.
+        only = next(iter(urls))
+        label = html.escape(names[0] if names else "the manufacturer")
+        credit = (
+            f' · every figure from <a href="{html.escape(only)}" '
+            f'target="_blank" rel="noopener">{label} ↗</a>'
+        )
+        head_src = ""
     else:
-        # Sources here are usually several documents from one maker, so
-        # the shortest name is the shared publisher and listing them all
-        # spells it out twice. Credit the publisher; the per-row link
-        # title names the exact document.
-        shortest = min(names, key=len)
-        if all(n.startswith(shortest) for n in names):
-            credit = f" · from {html.escape(shortest)}, linked per row"
+        head_src = "<th>source</th>"
+        if not names:
+            credit = ""
+        elif len(names) == 1:
+            credit = " · from " + html.escape(names[0])
         else:
-            credit = f" · from {len(names)} sources, linked per row"
+            # Several documents from one maker: the shortest name is the
+            # shared publisher, so listing them all spells it out twice.
+            # Credit the publisher; the per-row link names the document.
+            shortest = min(names, key=len)
+            if all(n.startswith(shortest) for n in names):
+                credit = f" · from {html.escape(shortest)}, linked per row"
+            else:
+                credit = f" · from {len(names)} sources, linked per row"
 
     return f"""
 <h2>The car itself</h2>
@@ -516,7 +548,7 @@ def build_spec_section(specs: list, clusters: list[dict]) -> str:
 <table class="spec">
   <caption>Manufacturer figures · {discussed} of {total} discussed{credit}</caption>
   <thead><tr><th>figure</th><th>published</th>
-    <th>what the comment section said</th><th>source</th></tr></thead>
+    <th>what the comment section said</th>{head_src}</tr></thead>
   <tbody>
 {body}  </tbody>
 </table>
