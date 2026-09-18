@@ -49,6 +49,23 @@ CHECKOUT = Path.home() / ".opitrics" / REPO
 # is exactly why this is a constant and not a flag.
 DOMAIN = "opitrics.com"
 
+# How many past deploys the public repo keeps.
+#
+# Every deploy rewrites all subject pages, and git stores each version
+# forever — at 100 subjects a dozen rebuilds is ~645 MB of history for a
+# 54 MB site, and it only grows. So history is capped rather than kept
+# or discarded.
+#
+# Not zero, deliberately. That history is currently the only record of
+# what a page said on a given date: `snapshot()` exists in paths.py but
+# has never run, so nothing else preserves it. If someone disputes a
+# published figure, "here is what the page said when you read it" is
+# the answer, and a site whose product is checkability should be able
+# to give it. Twenty deploys is roughly a quarter's worth at the
+# current rate — long enough to cover any live dispute, bounded enough
+# that the repo stays near the size of the site.
+KEEP_DEPLOYS = 20
+
 # The mark, as SVG: two bars each divided at a different point. Same
 # geometry as brand/make_assets.py's `small` avatar variant — thicker
 # bars, wider inset, tighter notch — because that variant was already
@@ -743,6 +760,7 @@ def main() -> int:
         if code != 0:
             print(f"\n{RED}push failed:{RESET} {out[:200]}\n")
             return 1
+        _trim_history()
 
     enable_pages(slug)
 
@@ -829,6 +847,111 @@ def _comparison(entries: list[dict]) -> tuple[list[dict], list[dict]]:
         unique.append(c)
 
     return rows, unique
+
+
+def _trim_history() -> None:
+    """Keep the last KEEP_DEPLOYS commits, drop the rest. Never raises.
+
+    The site is already published when this runs, so any failure here
+    should cost history and nothing else. The body is wrapped rather
+    than only checking return codes, because `run` shells out and can
+    raise on a missing directory or a missing git — and a crash after a
+    successful push would report failure for a deploy that worked.
+    """
+    try:
+        _trim_history_inner()
+    except Exception as exc:  # noqa: BLE001 - housekeeping, never fatal
+        print(f"  {YELLOW}history trim skipped{RESET} {DIM}({exc}){RESET}")
+
+
+def _trim_history_inner() -> None:
+    """Keep the last KEEP_DEPLOYS commits, drop the rest.
+
+    Runs AFTER a successful push, never before: the published site is
+    already live and correct at this point, so a failure here costs
+    some history and nothing else. Every step is checked and the
+    function returns quietly rather than raising — a repo-size
+    housekeeping task must not be able to break publishing.
+
+    The mechanism is a fresh root commit containing the state
+    KEEP_DEPLOYS ago, with the recent commits replayed on top, then a
+    force push. That is a rewrite of the public repo's history, which
+    is only acceptable because nobody clones it — it is a publishing
+    target, not a codebase, and the pipeline that generates it lives in
+    the private repo.
+    """
+    if not (CHECKOUT / ".git").exists():
+        return
+    code, out = run(["git", "rev-list", "--count", "HEAD"], cwd=CHECKOUT)
+    if code != 0 or not out.strip().isdigit():
+        return
+    total = int(out.strip())
+    if total <= KEEP_DEPLOYS:
+        return
+
+    # The commit that will become the new root, and its tree.
+    code, base = run(
+        ["git", "rev-parse", f"HEAD~{KEEP_DEPLOYS - 1}"], cwd=CHECKOUT
+    )
+    if code != 0:
+        return
+    base = base.strip()
+
+    code, _ = run(["git", "checkout", "--detach", base], cwd=CHECKOUT)
+    if code != 0:
+        return
+
+    stamp = datetime.now().strftime("%Y-%m-%d")
+    code, new_root = run(
+        [
+            "git", "commit-tree", f"{base}^{{tree}}",
+            "-m",
+            f"sources: state as of this point ({stamp})\n\n"
+            f"History before this was trimmed to keep the public repo "
+            f"near the size of the site it publishes. The last "
+            f"{KEEP_DEPLOYS} deploys are preserved above; the pipeline "
+            f"that generated every page is in the private repo.",
+        ],
+        cwd=CHECKOUT,
+    )
+    if code != 0 or not new_root.strip():
+        run(["git", "checkout", "-f", "main"], cwd=CHECKOUT)
+        return
+    new_root = new_root.strip()
+
+    # Replay the kept commits on top of the new root.
+    code, _ = run(
+        ["git", "rebase", "--onto", new_root, base, "main"], cwd=CHECKOUT
+    )
+    if code != 0:
+        run(["git", "rebase", "--abort"], cwd=CHECKOUT)
+        run(["git", "checkout", "-f", "main"], cwd=CHECKOUT)
+        return
+
+    # The published tree must be byte-identical to what was just
+    # pushed. If the rebase changed anything, abandon the trim rather
+    # than force-push a different site.
+    code, diff = run(["git", "diff", "origin/main", "--stat"], cwd=CHECKOUT)
+    if code != 0 or diff.strip():
+        print(f"  {YELLOW}history trim skipped{RESET} "
+              f"{DIM}(tree would change){RESET}")
+        run(["git", "fetch", "origin", "main"], cwd=CHECKOUT)
+        run(["git", "reset", "--hard", "origin/main"], cwd=CHECKOUT)
+        return
+
+    code, out = run(
+        ["git", "push", "--force-with-lease", "origin", "main"], cwd=CHECKOUT
+    )
+    if code != 0:
+        print(f"  {YELLOW}history trim not pushed{RESET} {DIM}{out[:90]}{RESET}")
+        run(["git", "fetch", "origin", "main"], cwd=CHECKOUT)
+        run(["git", "reset", "--hard", "origin/main"], cwd=CHECKOUT)
+        return
+
+    run(["git", "reflog", "expire", "--expire=now", "--all"], cwd=CHECKOUT)
+    run(["git", "gc", "--prune=now", "--quiet"], cwd=CHECKOUT)
+    print(f"  {DIM}history trimmed to {KEEP_DEPLOYS} deploys "
+          f"(was {total}){RESET}")
 
 
 def _video_count(sp) -> int:
