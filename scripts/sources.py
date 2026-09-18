@@ -160,9 +160,31 @@ def main() -> int:
     report_out = paths.content_dir / "report-public.html"
     report_out.write_text(report_html, encoding="utf-8")
 
+    # The briefing: the same corpus read for what it tells a product or
+    # comms team. Nothing in it claims anything about buyers — see the
+    # docstring in opitrics/analyze/briefing.py.
+    from opitrics.render.brief import build_brief_page  # noqa: E402
+
+    brief_html = build_brief_page(
+        subject=args.subject,
+        display_name=paths.display_name,
+        analysis=analysis,
+        meta={
+            "raw": len(rows),
+            "fetched_on": fetched,
+            "videos": len(video_data),
+        },
+        siblings=siblings,
+    )
+    brief_out = paths.content_dir / "brief.html"
+    if brief_html:
+        brief_out.write_text(brief_html, encoding="utf-8")
+
     print(f"\n{GREEN}{BOLD}Pages ready{RESET}")
     print(f"  report  {report_out}")
     print(f"  sources {out}")
+    if brief_html:
+        print(f"  brief   {brief_out}")
     print(f"{DIM}publish these with your threads — they are what makes the "
           f"analysis checkable{RESET}\n")
     return 0

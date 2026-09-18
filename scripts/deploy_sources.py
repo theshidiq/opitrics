@@ -663,6 +663,14 @@ def main() -> int:
         # and the audit page's own URL never moves again.
         report = sp.content_dir / "report-public.html"
         shutil.copy2(sp.content_dir / "sources.html", target / "sources.html")
+
+        # /<subject>/brief/ rather than brief.html, for the same reason
+        # /terms is a directory: a clean URL that can be pasted anywhere
+        # and will not need changing.
+        brief = sp.content_dir / "brief.html"
+        if brief.exists():
+            (target / "brief").mkdir(parents=True, exist_ok=True)
+            shutil.copy2(brief, target / "brief" / "index.html")
         if report.exists():
             shutil.copy2(report, target / "index.html")
         else:

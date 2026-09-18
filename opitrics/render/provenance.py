@@ -419,6 +419,8 @@ def subject_views(subject: str, here: str) -> str:
     return f"""<div class="views">
   {view(f"/{subject}/", "The analysis",
         "Themes, charts and what the comment section said", "report")}
+  {view(f"/{subject}/brief/", "The briefing",
+        "Where the discussion catches, and on what", "brief")}
   {view(f"/{subject}/sources.html", "The sources",
         "Every video read and every quote, with permalinks", "sources")}
 </div>"""
