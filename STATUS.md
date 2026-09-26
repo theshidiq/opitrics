@@ -108,12 +108,24 @@ check with view-source.
 One thread published, on X, on 2026-08-26. Nothing since. Everything
 else is built and sitting on disk, now across four subjects.
 
-**All five shorts on disk are SILENT, and blocked until 2026-09-24.**
-The ElevenLabs Starter quota is exhausted — 40,000 of 40,000 used, 0
-remaining, resets 24 Sep 18:38 JST. A top-up was purchased on 17 Sep
-and has not appeared on the key in `.env`; check it went to the account
-that key belongs to, and whether it was a plan upgrade rather than
-credits, since `tier` still reads `starter` at a 40,000 limit.
+**The shorts are voiced again as of 2026-09-26.** All five verified
+with `ffmpeg volumedetect`: mean -18 to -20 dB, max around -4.7, real
+sample counts. Never trust a successful render here; check the levels.
+
+**The whole rebuild cost 1,908 characters of 30,000.** Five shorts,
+six per cent of a month, so roughly fifteen full rebuilds fit in a
+billing cycle. The quota was never the constraint it looked like
+during the outage — a single exhausted cycle made it feel scarce.
+
+**On the limit dropping 40,000 to 30,000:** 30,000 is the current
+standard Starter allowance, the account reads `active` with no open
+invoices, and `allowed_to_extend_character_limit` is False. The most
+likely reading is that the 17 Sep top-up DID land, as a one-off 10,000
+on top of the 30,000 base, was consumed in that cycle, and expired at
+the 24 Sep rollover. That is inference from the numbers, not something
+the API states — it exposes no top-up history. Check Billing for a
+17 Sep charge before buying another, in case it behaves as one-time
+rather than recurring.
 
 How they went silent is worth keeping. Every `speak()` call failed on
 the exhausted quota, each printed a warning, and the render completed
@@ -161,8 +173,8 @@ than anything in the Racco corpus alone.
 | Racco threads | 6, ten warnings across five. One had a fabricated quote (below) |
 | e Sky threads | 6, four warnings, three of them clean |
 | Sakura, N-Box | analysis and sources pages only. No threads |
-| Racco shorts | 5, **NO AUDIO STREAM.** Not quiet — silent. Do not post |
-| e Sky shorts | none. Blocked on the same quota |
+| Racco shorts | 5, **voiced 26 Sep**, mean -18 to -20 dB, verified |
+| e Sky shorts | none built. Not blocked — quota is available |
 | comparison cards | 3, live at `/compare/` with the four-way table |
 | verdict card | forced onto `car`, renders correctly |
 | queue | `data/output/queue.json`, empty, driven by `scripts/schedule.py` |
