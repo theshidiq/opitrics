@@ -30,6 +30,10 @@ export type Shot = {
   hold: number;
   /** Narration file, relative to the public directory. */
   audio?: string | null;
+  /** One-shot effect at the start of this shot, relative to public/. */
+  sfx?: string | null;
+  /** Gain for that effect, in dB. Negative sits it under the voice. */
+  sfxGainDb?: number;
 };
 
 export type ShortProps = {
@@ -268,6 +272,17 @@ export const Short: React.FC<ShortProps> = ({
           />
           {shot.audio ? (
             <Audio src={staticFile(shot.audio)} />
+          ) : null}
+          {/*
+            One-shot, not looped, and well under the narration. An
+            effect competing with the voice is worse than no effect:
+            the voice is the content and the effect is punctuation.
+          */}
+          {shot.sfx ? (
+            <Audio
+              src={staticFile(shot.sfx)}
+              volume={Math.pow(10, (shot.sfxGainDb ?? -14) / 20)}
+            />
           ) : null}
         </Sequence>
       ))}

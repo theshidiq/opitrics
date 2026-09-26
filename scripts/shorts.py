@@ -401,6 +401,44 @@ whole thing.
 Return JSON: {"translations":[{"index":<int>,"english":"..."}]}"""
 
 
+def build_effects(
+    eleven: ElevenLabs, cards: list[dict], out_dir: Path,
+) -> dict[int, Path]:
+    """One effect on the opening card, one on the closing one.
+
+    Two is the whole budget. `scripts/short.py` settled on that before
+    it was superseded, and the reasoning holds: at this pace an effect
+    on every cut is exhausting, and the voice is the content while the
+    effect is only punctuation.
+
+    The prompts are fixed rather than model-chosen. The old script let
+    the LLM name an effect per beat, which is a fabrication surface for
+    no gain — nothing about a UI whoosh needs to come from the data,
+    and anything the model invents here is one more thing to verify.
+
+    Generated SFX are covered by the ordinary commercial licence on a
+    paid plan. Generated MUSIC is not, on Starter — see `audio.py`.
+    """
+    if len(cards) < 2:
+        return {}
+
+    wanted = {
+        0: ("a short soft digital chime, clean, no reverb tail", 1.0),
+        len(cards) - 1: ("a quiet low woody knock, single, dry", 0.8),
+    }
+    effects: dict[int, Path] = {}
+    for index, (prompt, seconds) in wanted.items():
+        path = out_dir / f"sfx-{index + 1:02d}.mp3"
+        try:
+            eleven.sound_effect(prompt, path, duration=seconds)
+            effects[index] = path
+        except AudioError as exc:
+            print(f"  {YELLOW}sfx {index + 1}: {exc}{RESET}")
+    if effects:
+        print(f"  {DIM}{len(effects)} sound effect(s){RESET}")
+    return effects
+
+
 def check_narration(lines: list[str], raw: int) -> list[str]:
     """Numbers recited aloud, and openings that waste the first line.
 
@@ -765,10 +803,16 @@ def build_angle(
             if ranked else None
         )
 
+        effects = build_effects(eleven, built.cards, out_dir) \
+            if (eleven and not args.no_sfx) else {}
+
         spec = rmt.ShortSpec(
             shots=[
-                rmt.Shot(card=c, hold=h, audio=vo)
-                for c, h, vo in zip(built.cards, holds, narration)
+                rmt.Shot(card=c, hold=h, audio=vo, sfx=effects.get(i),
+                         sfx_gain_db=args.sfx_gain)
+                for i, (c, h, vo) in enumerate(
+                    zip(built.cards, holds, narration)
+                )
             ],
             music=music,
             music_gain_db=args.music_gain,
@@ -821,6 +865,10 @@ def main() -> int:
     ap.add_argument("--all", action="store_true", help="build every angle")
     ap.add_argument("--music", type=Path)
     ap.add_argument("--music-gain", type=float, default=-22.0)
+    ap.add_argument("--no-sfx", action="store_true",
+                    help="skip the two sound effects")
+    ap.add_argument("--sfx-gain", type=float, default=-14.0,
+                    help="effect gain in dB, under the voice")
     ap.add_argument("--crossfade", type=float, default=0.12)
     ap.add_argument("--max-pause", type=float, default=0.30,
                     help="cap on silence inside a spoken line, seconds")

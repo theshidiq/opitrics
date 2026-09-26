@@ -54,6 +54,11 @@ class Shot:
     card: dict
     hold: float
     audio: Path | None = None
+    # A one-shot effect at the head of this shot. Voice and SFX are both
+    # covered by the ordinary paid-plan commercial licence; music is not
+    # on this tier, which is why there is no per-shot music field.
+    sfx: Path | None = None
+    sfx_gain_db: float = -14.0
 
     def as_props(self, staged: dict[Path, str]) -> dict:
         card = dict(self.card)
@@ -65,6 +70,8 @@ class Shot:
             "card": card,
             "hold": round(self.hold, 3),
             "audio": staged.get(self.audio) if self.audio else None,
+            "sfx": staged.get(self.sfx) if self.sfx else None,
+            "sfxGainDb": self.sfx_gain_db,
         }
 
 
@@ -105,6 +112,7 @@ def _stage_assets(spec: ShortSpec) -> dict[Path, str]:
 
     for i, shot in enumerate(spec.shots, 1):
         stage(shot.audio, "vo", i)
+        stage(shot.sfx, "sfx", i)
         src = shot.card.get("src")
         if src:
             stage(Path(src), "img", i)

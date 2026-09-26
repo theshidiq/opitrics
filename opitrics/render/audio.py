@@ -1,10 +1,27 @@
 """Voiceover and sound effects from ElevenLabs.
 
-Voice and SFX only. Generated music carries stricter terms than voice —
-ElevenLabs asks for an additional license for advertising and commercial
-distribution, and where a monetised short falls is ambiguous enough to
-avoid. Music is supplied as a file from a library with unambiguous
-terms, and mixed in by the video stage.
+Voice and SFX are covered by the ordinary commercial licence on any
+paid plan, and both may be published.
+
+MUSIC IS A SEPARATE LICENCE AND STARTER DOES NOT CLEAR IT. Checked
+against the Eleven Music model-specific terms on 2026-09-26, which are
+narrower than the general commercial licence in two ways:
+
+  - "All online and offline commercial use permitted, except film, TV,
+    radio, & Studio Games" — so a short is permitted use in principle.
+  - Streaming on third-party platforms is permitted only on Creator
+    tier and above, and prohibited on Free and Starter.
+
+Publishing a short to YouTube, TikTok or Instagram is third-party
+platform distribution, so on Starter generated music cannot go into
+anything that ships. Creator tier clears it. Until then music is a
+supplied file from a library with its own terms, mixed in by the video
+stage via `--music`.
+
+An earlier version of this note said music needed "an additional
+license for advertising and commercial distribution" and called the
+position ambiguous. That was close but imprecise, and imprecise in the
+direction that makes a plan question look like a legal one.
 
 Free-tier output cannot be used in monetised work at all; the client
 says so rather than letting it be discovered after publishing.
