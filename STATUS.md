@@ -103,6 +103,23 @@ on `/compare/` resolves; and still **zero `<script>` tags on any page**,
 which is what `/privacy/` claims and the one claim there a reader can
 check with view-source.
 
+## Indonesia pilot, 2026-10-31
+
+Subject `byd-atto-1-id`: 3,419 comments from 12 videos on Motomobi,
+Ridwan Hanif, Fitra Eri and MAS BANS, for 232 quota units. The most
+liked comment (838) is "Toyota spamming iklan, mulai ketar ketir
+sepertinya", the Racco story from the other side: a Chinese EV entering
+a market Japanese brands dominate.
+
+Embedding, clustering and sentiment run unchanged; the models were
+already multilingual. What broke is the aspect taxonomy, which carries
+910 Japanese characters and no Indonesian: 12% unmapped against 0% on
+every Japanese corpus, and the Toyota-ads comment filed under "ride
+comfort". Informal Indonesian abbreviations (yg, sdh, tp, dgn, gak)
+also defeat any word-list language check. Not yet built: Indonesian
+taxonomy terms, slang normalisation, and a decision on whether output
+for this market is written in Indonesian or English.
+
 ## Where this stands
 
 One thread published, on X, on 2026-08-26. Nothing since. Everything
