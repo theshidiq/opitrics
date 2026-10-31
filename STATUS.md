@@ -241,10 +241,30 @@ Three things that only the first live post could settle:
   It failed on the first call, so nothing partial reached the timeline
   — but a mid-thread exhaustion would leave half a thread published,
   so keep a balance ahead of a run rather than topping up on failure.
-- **The app cannot read.** Free tier is write-only: `get_tweets` on the
-  posts it just made returns 401. Verification is the receipt in
-  `content/threads/<angle>/posted.json`, or opening the URL. Do not
-  build anything that reads back from X.
+- **The app CAN read. This line used to say it could not, and that was
+  wrong.** The August test called tweepy's `get_tweets` without
+  `user_auth=True`, so it sent a bearer token we never set, and the 401
+  meant "no credentials", not "no read access". Retested 2026-10-31
+  with user-context auth: `get_me` and `get_users_tweets` both work.
+  Under pay-per-use a read is a priced call (reported ~$0.005 per post,
+  ~$0.001 for posts the app's own account made), not a locked tier.
+
+**What reading the account found, 2026-10-31:**
+
+- **A second thread is live that this board never recorded.** The
+  `car` thread went out on 2026-08-29, eight posts, opening "The BYD
+  Racco is a kei car that weighs 1.2 tonnes". There is no `posted.json`
+  for it on disk, so it was posted by some route that leaves no receipt.
+- **The first thread has lost its head.** Post 1 of the `quotes` thread
+  (`2092531936271245540`) returns "Could not find post". 16 posts are on
+  the account against 18 sent, so two are gone, including the one every
+  reply chains from. The remaining eight hang off a deleted post. Not
+  known whether that was deliberate; check before reposting anything.
+- **Zero engagement.** 0 followers, 0 likes on every post. Each post
+  shows one "reply", which is the next post in its own thread chaining,
+  not an audience. This is the retention signal the board has been
+  waiting for, and it says nobody has seen these yet — which is a
+  distribution problem, not a writing one.
 
 **On signing up with aliases.** An alias is an address, not an account —
 it has no password and cannot be signed into, so "Sign in with Google"
